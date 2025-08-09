@@ -41,9 +41,10 @@ const [Modal, modalApi] = useModal({
     if (isOpen) {
       isUpdate.value = false;
       formApi.resetForm();
-      const {record} = modalApi.getData<Record<string, any>>();
+      const data = modalApi.getData<Record<string, any>>();
+      const record = data?.record;
       //编辑
-      if (record.id) {
+      if (record?.id) {
         isUpdate.value = true;
         record.value = await api.get(record.id);
         await formApi.setValues(record.value);
