@@ -76,7 +76,7 @@ function objectToArray(obj) {
 </template>
 
 <style lang="scss" scoped>
-.no-padding ::v-deep .ant-card-body {
+:deep(.no-padding .ant-card-body) {
     padding: 0 !important;
 }
 </style>
