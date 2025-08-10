@@ -69,7 +69,22 @@ const [Drawer, drawerApi] = useDrawer({
     if (!valid) {
       return;
     }
-    const data = cloneDeep(await formApi.getValues());
+    const formData = await formApi.getValues();
+    const data: Omit<DbSettingRow, "id"> = {
+      name: formData.name || "",
+      description: formData.description || "",
+      driver: formData.driver || "",
+      host: formData.host || "",
+      port: formData.port || "",
+      database: formData.database || "",
+      username: formData.username || "",
+      password: formData.password || "",
+      prefix: formData.prefix || "",
+      variable: formData.variable,
+      is_default: formData.is_default || 0,
+      enabled: formData.enabled || 0,
+      created_date: formData.created_date || new Date().toISOString()
+    };
     await (isUpdate.value ? api.update(data) : api.create(data));
     emit("reload");
     drawerApi.close();
