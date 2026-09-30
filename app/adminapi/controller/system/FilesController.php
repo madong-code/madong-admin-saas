@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace app\adminapi\controller\system;
 
 use app\adminapi\controller\Crud;
+use app\adminapi\CurrentUser;
 use app\adminapi\middleware\AccessTokenMiddleware;
 use app\adminapi\middleware\OperationMiddleware;
 use app\adminapi\middleware\PermissionMiddleware;
@@ -25,12 +26,16 @@ use app\schema\request\IdRequest;
 use app\service\admin\system\config\UploadService;
 use core\foundation\exception\handler\AdminException;
 use core\foundation\tool\Json;
+use core\io\upload\support\StorageUrl;
+use core\io\upload\UploadScene;
 use madong\swagger\annotation\response\PageResponse;
 use madong\swagger\annotation\response\SimpleResponse;
+use madong\swagger\attribute\AllowAnonymous;
 use madong\swagger\attribute\Permission;
 use OpenApi\Attributes as OA;
 use OpenApi\Attributes\RequestBody;
 use support\annotation\Middleware;
+use support\Container;
 use support\Request;
 use Webman\RedisQueue\Client;
 use WebmanTech\Swagger\DTO\SchemaConstants;
@@ -88,7 +93,28 @@ final class FilesController extends Crud
     #[SimpleResponse(schema: [], example: [])]
     public function destroy(Request $request): \support\Response
     {
-        return parent::destroy($request);
+        try {
+            // 删除附件会同时清理云 / 本地物理资源，不可恢复，需二次校验当前登录管理员密码。
+            // 校验使用当前身份（含租户库中的管理员），避免越权删除他人空间资源。
+            $password = (string)$request->input('password', '');
+            if ($password === '') {
+                throw new AdminException('请输入管理员密码');
+            }
+            $admin = Container::make(CurrentUser::class)->admin();
+            if (empty($admin) || !password_verify($password, (string)$admin->password)) {
+                throw new AdminException('管理员密码错误');
+            }
+
+            $ids = $this->getDeleteIds($request);
+            if (empty($ids)) {
+                throw new AdminException('删除参数不能为空');
+            }
+
+            // 记录删除在 TenantScope 作用域内完成，物理资源按当前租户存储配置清理
+            return Json::success('ok', $this->service->removeWithStorage($ids));
+        } catch (\Throwable $e) {
+            return Json::fail($e->getMessage());
+        }
     }
 
     #[OA\Delete(
@@ -103,7 +129,8 @@ final class FilesController extends Crud
     #[SimpleResponse(schema: [], example: [])]
     public function batchDelete(Request $request): \support\Response
     {
-        return parent::destroy($request);
+        // 批量删除与单条删除语义一致：均需管理员密码校验并清理物理资源
+        return $this->destroy($request);
     }
 
     #[OA\Post(
@@ -129,7 +156,8 @@ final class FilesController extends Crud
     public function downloadNetworkImage(Request $request): \support\Response
     {
         $url    = $request->input('url', '');
-        $result = $this->service->saveNetworkImage($url);
+        $subDir = (string)$request->input('sub_dir', '');
+        $result = $this->service->saveNetworkImage($url, $subDir);
         return Json::success('操作成功', $result);
     }
 
@@ -196,6 +224,46 @@ final class FilesController extends Crud
     /**
      * @throws \Throwable
      */
+    #[OA\Post(
+        path: '/system/files/access-urls',
+        description: '按资源 key 批量换取可访问地址：公开空间返回访问域名拼接结果，私有空间（非公开读）返回带签名的临时直链；仅签发可内联渲染的图片/音频/视频，附件与下载包须走各自带归属校验的下载接口',
+        summary: '资源访问地址批量换取',
+        security: [['Bearer' => [], 'ApiKey' => []]],
+        tags: ['附件管理'],
+    )]
+    #[RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(
+                    property: 'keys',
+                    description: '资源地址集合，支持相对路径与本空间域名下的绝对地址',
+                    type: 'array',
+                    items: new OA\Items(type: 'string'),
+                    example: ['/storage/avatar/202609/abc.png']
+                ),
+            ]
+        )
+    )]
+    #[SimpleResponse(schema: [], example: ['data' => [['key' => '/storage/avatar/202609/abc.png', 'url' => 'https://cdn.example.com/storage/avatar/202609/abc.png?e=1790157600&token=xxx']]])]
+    #[Permission(code: 'upload:files:access_urls')]
+    #[AllowAnonymous(requireToken: true, requirePermission: false, description: '需携带登录身份：据此建立租户上下文，才能按当前租户的存储配置签发地址')]
+    public function accessUrls(Request $request): \support\Response
+    {
+        try {
+            $keys = $request->input('keys', []);
+            if (is_string($keys)) {
+                $keys = $keys === '' ? [] : explode(',', $keys);
+            }
+            if (!is_array($keys)) {
+                throw new AdminException('参数 keys 必须是数组');
+            }
+            return Json::success('ok', StorageUrl::resolveMany(array_values($keys), UploadScene::admin()));
+        } catch (\Throwable $e) {
+            return Json::fail($e->getMessage());
+        }
+    }
+
     #[OA\Post(
         path: '/system/files/upload-image',
         summary: '上传图片',

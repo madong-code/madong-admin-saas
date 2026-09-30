@@ -21,6 +21,8 @@ class S3 extends BaseUpload
 {
     protected ?S3Client $instance = null;
 
+    /** 私有读签名专用客户端（endpoint 为对外访问域名，与上传客户端不同） */
+    protected ?S3Client $signingInstance = null;
 
     public function getInstance(): S3Client
     {
@@ -74,7 +76,7 @@ class S3 extends BaseUpload
         return $result;
     }
 
-    public function uploadServerFile(string $filePath): array
+    public function uploadServerFile(string $filePath, array $options = []): array
     {
         $file = new \SplFileInfo($filePath);
         if (!$file->isFile()) {
@@ -82,7 +84,7 @@ class S3 extends BaseUpload
         }
 
         $uniqueId = hash_file($this->algo, $file->getPathname());
-        $object   = $this->buildObjectKey($uniqueId . '.' . $file->getExtension());
+        $object   = $this->resolveTargetKey($uniqueId . '.' . $file->getExtension(), $options);
 
         $result = [
             'origin_name' => $file->getRealPath(),
@@ -105,6 +107,57 @@ class S3 extends BaseUpload
         }
 
         return $result;
+    }
+
+    /**
+     * 私有空间：签发带签名的临时直链
+     *
+     * 传入地址非本空间域名时原样返回（外链不做签名）。
+     */
+    public function signedUrl(string $key, int $ttl = 0): string
+    {
+        $object = $this->normalizeObjectKey($key);
+        if ($object === null) {
+            return trim(str_replace('\\', '/', $key));
+        }
+
+        if (!$this->isPrivate()) {
+            return $this->buildPublicUrl($object);
+        }
+
+        $bucket = (string)($this->config['bucket'] ?? '');
+        $domain = rtrim((string)($this->config['domain'] ?? ''), '/');
+        $keyId  = (string)($this->config['key'] ?? '');
+        $secret = (string)($this->config['secret'] ?? '');
+        if ($bucket === '' || $domain === '' || $keyId === '' || $secret === '') {
+            throw new UploadException('私有空间配置不完整：key / secret / bucket / domain 均不能为空');
+        }
+
+        // SigV4 签名包含 Host，因此签名客户端的 endpoint 必须就是对外访问域名，
+        // 并配合 bucket_endpoint + path_style 让 bucket 不出现在 Host 与路径中，
+        // 保证签名结果与前端实际请求的地址完全一致
+        $client = $this->signingInstance ??= new S3Client([
+            'version' => $this->config['version'] ?? 'latest',
+            'region' => $this->config['region'] ?? 'us-east-1',
+            'endpoint' => $domain,
+            'bucket_endpoint' => true,
+            'use_path_style_endpoint' => true,
+            'credentials' => [
+                'key' => $keyId,
+                'secret' => $secret,
+            ],
+        ]);
+
+        try {
+            $command = $client->getCommand('GetObject', [
+                'Bucket' => $bucket,
+                'Key' => $object,
+            ]);
+
+            return (string)$client->createPresignedRequest($command, $this->resolveDeadline($ttl))->getUri();
+        } catch (Throwable $exception) {
+            throw new UploadException('S3 私有签名失败: ' . $exception->getMessage());
+        }
     }
 
     public function uploadBase64(string $base64, string $extension = 'png'): array
@@ -134,6 +187,55 @@ class S3 extends BaseUpload
             'size' => $fileSize,
             'extension' => $extension,
         ];
+    }
+
+    /**
+     * 判断云端对象是否存在
+     *
+     * @param string $key 对象 key 或本空间域名下的绝对地址
+     *
+     * @return bool
+     * @throws UploadException
+     */
+    public function exists(string $key): bool
+    {
+        $object = $this->normalizeObjectKey($key);
+        if ($object === null || $object === '') {
+            throw new UploadException('S3 资源 key 非法，无法检查对象是否存在: ' . $key);
+        }
+
+        try {
+            return $this->getInstance()->doesObjectExist($this->config['bucket'], $object);
+        } catch (Throwable $exception) {
+            throw new UploadException($exception->getMessage());
+        }
+    }
+
+    /**
+     * 删除云端对象
+     *
+     * @param string $key 对象 key 或本空间域名下的绝对地址
+     *
+     * @return bool 对象不存在返回 false
+     * @throws UploadException
+     */
+    public function deleteFile(string $key): bool
+    {
+        $object = $this->normalizeObjectKey($key);
+        if ($object === null || $object === '') {
+            throw new UploadException('S3 资源 key 非法，已拒绝删除: ' . $key);
+        }
+
+        try {
+            $this->getInstance()->deleteObject([
+                'Bucket' => $this->config['bucket'],
+                'Key' => $object,
+            ]);
+        } catch (Throwable $exception) {
+            throw new UploadException('S3 删除失败: ' . $exception->getMessage());
+        }
+
+        return true;
     }
 }
 

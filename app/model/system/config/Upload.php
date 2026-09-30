@@ -50,6 +50,7 @@ class Upload extends BaseModel
         'ext',
         'content_type',
         'platform',
+        'space',
         'th_url',
         'th_filename',
         'th_size',

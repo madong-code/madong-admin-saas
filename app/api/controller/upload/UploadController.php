@@ -18,6 +18,8 @@ use app\api\controller\Base;
 use app\service\api\upload\UploadService;
 use core\foundation\exception\handler\AdminException;
 use core\foundation\tool\Json;
+use core\io\upload\support\StorageUrl;
+use core\io\upload\UploadScene;
 use madong\swagger\annotation\response\SimpleResponse;
 use madong\swagger\attribute\AllowAnonymous;
 use OpenApi\Attributes as OA;
@@ -30,6 +32,60 @@ final class UploadController extends Base
     public function __construct(UploadService $service)
     {
         $this->service = $service;
+    }
+
+    #[OA\Post(
+        path: '/file/access-urls',
+        description: '按资源 key 批量换取可访问地址：公开空间返回访问域名拼接结果，私有空间（非公开读）返回带签名的临时直链；仅签发可内联渲染的图片/音频/视频，附件与下载包须走各自带归属校验的下载接口',
+        summary: '资源访问地址批量换取',
+        security: [['Bearer' => [], 'ApiKey' => []]],
+        tags: ['上传管理'],
+    )]
+    #[RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(
+                    property: 'keys',
+                    description: '资源地址集合，支持相对路径与本空间域名下的绝对地址',
+                    type: 'array',
+                    items: new OA\Items(type: 'string'),
+                    example: ['/storage/avatar/202609/abc.png']
+                ),
+            ]
+        )
+    )]
+    #[SimpleResponse(schema: new OA\Schema(
+        properties: [
+            new OA\Property(
+                property: 'data',
+                description: '可访问地址列表（仅含成功解析的条目）',
+                type: 'array',
+                items: new OA\Items(
+                    properties: [
+                        new OA\Property(property: 'key', description: '原始资源地址', type: 'string'),
+                        new OA\Property(property: 'url', description: '可访问地址', type: 'string'),
+                    ],
+                    type: 'object'
+                )
+            ),
+        ]
+    ), example: ['data' => [['key' => '/storage/avatar/202609/abc.png', 'url' => 'https://cdn.example.com/storage/avatar/202609/abc.png?e=1790157600&token=xxx']]])]
+    #[AllowAnonymous(requireToken: false, requirePermission: false, description: '公共接口（仅签发可内联渲染的媒体，登录时携带身份）')]
+    public function accessUrls(Request $request): \support\Response
+    {
+        try {
+            $keys = $request->input('keys', []);
+            if (is_string($keys)) {
+                $keys = $keys === '' ? [] : explode(',', $keys);
+            }
+            if (!is_array($keys)) {
+                throw new AdminException('参数 keys 必须是数组');
+            }
+            return Json::success('ok', StorageUrl::resolveMany(array_values($keys), UploadScene::api()));
+        } catch (\Exception $e) {
+            return Json::fail($e->getMessage());
+        }
     }
 
     #[OA\Post(

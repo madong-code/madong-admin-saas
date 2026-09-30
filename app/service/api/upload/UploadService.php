@@ -182,8 +182,9 @@ class UploadService extends BaseService
         }
         $hash   = md5_file($save_path);
         $size   = filesize($save_path);
-        // 去重保持租户作用域，禁止跨租户 hash 复用
-        $result = $this->dao->get(['hash' => $hash]);
+        // 去重保持租户作用域，且区分存储平台与存储空间，禁止跨租户/跨空间复用
+        $space  = UploadFile::spaceMark('local', $this->getScene());
+        $result = $this->dao->get(['hash' => $hash, 'platform' => 'local', 'space' => $space]);
         if (!empty($result)) {
             unlink($save_path);
             return $result->toArray();
@@ -203,6 +204,7 @@ class UploadService extends BaseService
         copy($save_path, $newPath);
         unlink($save_path);
         $info['platform']          = 'local';
+        $info['space']             = $space;
         $info['original_filename'] = $filename;
         $info['filename']          = $object_name;
         $info['hash']              = $hash;
@@ -294,8 +296,9 @@ class UploadService extends BaseService
         }
         $hash   = md5_file($save_path);
         $size   = filesize($save_path);
-        // 去重保持租户作用域，禁止跨租户 hash 复用
-        $result = $this->dao->get(['hash' => $hash]);
+        // 去重保持租户作用域，且区分存储平台与存储空间，禁止跨租户/跨空间复用
+        $space  = UploadFile::spaceMark('local', $this->getScene());
+        $result = $this->dao->get(['hash' => $hash, 'platform' => 'local', 'space' => $space]);
         if (!empty($result)) {
             unlink($save_path);
             return $result->toArray();
@@ -317,6 +320,7 @@ class UploadService extends BaseService
         copy($save_path, $newPath);
         unlink($save_path);
         $info['platform']          = 'local';
+        $info['space']             = $space;
         $info['original_filename'] = $filename;
         $info['filename']          = $object_name;
         $info['hash']              = $hash;
@@ -354,13 +358,18 @@ class UploadService extends BaseService
         $url    = str_replace('\\', '/', $data['url']);
         $path   = str_replace('\\', '/', $data['save_path']);
 
-        // 检查文件是否已存在（租户作用域内去重，禁止跨租户 hash 复用）
-        if ($filesInfo = $this->dao->get(['hash' => $data['unique_id']])) {
+        // 存储空间标识（default=公开 / private=私有）：切换公开、私有空间后同一份文件
+        // 已在当前空间重新落盘，必须新建记录，不能复用另一空间的旧地址
+        $space = UploadFile::spaceMark($config['mode'], $scene);
+
+        // 检查文件是否已存在（租户作用域内去重：同一 hash + 同一存储平台 + 同一存储空间才复用）
+        if ($filesInfo = $this->dao->get(['hash' => $data['unique_id'], 'platform' => $config['mode'], 'space' => $space])) {
             return $filesInfo;
         }
 
         $inData = [
             'platform'          => $config['mode'],
+            'space'             => $space,
             'original_filename' => $data['origin_name'] ?? '',
             'filename'          => $data['save_name'],
             'hash'              => $data['unique_id'],

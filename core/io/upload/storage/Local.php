@@ -68,7 +68,15 @@ class Local extends BaseUpload
                 'extension'   => $file->getUploadExtension(),
                 'base_path'   => $basePathUrl
             ];
-            $file->move($savePath);
+            // Windows 下 PHP 临时目录（upload_tmp_dir）与项目可能不在同一分区，
+            // 此时 rename 会以「Cross-device link not permitted」失败，回落到拷贝后删除源文件
+            $source = $file->getPathname();
+            if (!@rename($source, $savePath)) {
+                if (!@copy($source, $savePath)) {
+                    throw new UploadException('文件保存失败，请核查目录权限：' . $savePath);
+                }
+                @unlink($source);
+            }
             $result[] = $temp;
         }
         return $result;
@@ -76,7 +84,6 @@ class Local extends BaseUpload
     
     /**
      * 获取子目录
-     * 租户模式下自动注入 tenant_{id} 前缀（单体/无租户上下文跳过）
      */
     protected function getSubdir(array $options = []): string
     {
@@ -129,10 +136,91 @@ class Local extends BaseUpload
     }
 
     /**
+     * 删除本地文件
+     *
+     * 只允许删除存储根目录内的文件，越界（含 ../ 穿越）一律拒绝。
+     *
+     * @param string $key 绝对文件系统路径，或以存储根目录为基准的相对路径
+     *
+     * @return bool 文件不存在（已删除）返回 false
+     * @throws UploadException 路径非法或越界
+     */
+    public function deleteFile(string $key): bool
+    {
+        $path = $this->resolveLocalPath($key);
+        if ($path === null) {
+            throw new UploadException('本地资源路径非法或越界，已拒绝删除: ' . $key);
+        }
+        if (!is_file($path)) {
+            return false;
+        }
+
+        return @unlink($path);
+    }
+
+    /**
+     * 归一化本地路径并校验是否位于存储根目录内
+     *
+     * @return string|null 命中根目录时返回归一化路径，越界或非法返回 null
+     */
+    private function resolveLocalPath(string $key): ?string
+    {
+        $key = trim(str_replace('\\', '/', $key));
+        if ($key === '') {
+            return null;
+        }
+
+        $root = $this->normalizedRoot();
+        $candidates = [$key];
+        // 以 / 开头的 key 在类 Unix 系统下会被当作绝对路径，这里补充相对根目录的候选
+        if (str_starts_with($key, '/')) {
+            $candidates[] = $root . '/' . ltrim($key, '/');
+        }
+
+        foreach ($candidates as $candidate) {
+            $real = realpath($candidate);
+            if ($real === false) {
+                // 文件已不存在：仅当所在目录确实位于根目录内才按“已删除”处理
+                $dir = realpath(dirname($candidate));
+                if ($dir !== false && $this->isWithin(str_replace('\\', '/', $dir), $root)) {
+                    return $candidate;
+                }
+                continue;
+            }
+            $normalized = str_replace('\\', '/', $real);
+            if ($this->isWithin($normalized, $root)) {
+                return $normalized;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * 归一化后的存储根目录（去尾斜杠）
+     */
+    private function normalizedRoot(): string
+    {
+        $root = $this->getRootPath();
+        $real = realpath($root);
+
+        return rtrim(str_replace('\\', '/', $real === false ? $root : $real), '/');
+    }
+
+    /**
+     * 判断路径是否位于根目录内
+     */
+    private function isWithin(string $path, string $root): bool
+    {
+        return $root !== '' && ($path === $root || str_starts_with($path, $root . '/'));
+    }
+
+    /**
      * 上传服务端文件
      * @param string $filePath 服务端文件路径
+     * @param array  $options  上传选项（支持 sub_dir 指定业务/插件子目录）
      */
-    public function uploadServerFile(string $filePath): array
+    public function uploadServerFile(string $filePath, array $options = []): array
     {
         $file = new \SplFileInfo($filePath);
         if (!$file->isFile()) {
@@ -155,7 +243,7 @@ class Local extends BaseUpload
         $basePathUrl  = $this->dirSeparator . $saveFilename;
 
         if (!empty($rootDir)) {
-            $subDir    = $this->getSubdir();
+            $subDir    = $this->getSubdir($options);
             $fullDir   = $rootDir . ($subDir ? $this->dirSeparator . $subDir : '');
             $savePath  = $root . $this->dirSeparator . $fullDir . $this->dirSeparator . $saveFilename;
             $url       = $domain . $this->dirSeparator . $fullDir . $this->dirSeparator . $saveFilename;

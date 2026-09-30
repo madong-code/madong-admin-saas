@@ -12,10 +12,13 @@ return [
             'content' => [
                 'root' => 'public',
                 'dirname' => 'upload',
-                'domain' => 'http://127.0.0.1:8001',
+                'domain' => 'http://127.0.0.1:8500',
                 // 是否按租户分目录：缺 key 时运行时默认 租户=true / 单体·平台=false
                 'tenant_path' => true,
                 'tenant_path_pattern' => 'tenant_{tenant_id}',
+                // 本地存储与站点同域，恒为公开读（前端不展示私有开关）
+                'is_private' => false,
+                'ttl' => 3600,
             ],
             'is_sys' => 1
         ],
@@ -33,6 +36,9 @@ return [
                 'dirname' => '',
                 'tenant_path' => true,
                 'tenant_path_pattern' => 'tenant_{tenant_id}',
+                // 私有空间（非公开读）：开启后前端不能自行拼接地址，需按 key 换取签名直链
+                'is_private' => false,
+                'ttl' => 3600,
             ],
             'is_sys' => 1
         ],
@@ -50,6 +56,9 @@ return [
                 'dirname' => '',
                 'tenant_path' => true,
                 'tenant_path_pattern' => 'tenant_{tenant_id}',
+                // 私有空间（非公开读）：开启后前端不能自行拼接地址，需按 key 换取签名直链
+                'is_private' => false,
+                'ttl' => 3600,
             ],
             'is_sys' => 1
         ],
@@ -67,6 +76,9 @@ return [
                 'dirname' => '',
                 'tenant_path' => true,
                 'tenant_path_pattern' => 'tenant_{tenant_id}',
+                // 私有空间（非公开读）：开启后前端不能自行拼接地址，需按 key 换取签名直链
+                'is_private' => false,
+                'ttl' => 3600,
             ],
             'is_sys' => 1
         ],
@@ -87,6 +99,9 @@ return [
                 'acl' => '',
                 'tenant_path' => true,
                 'tenant_path_pattern' => 'tenant_{tenant_id}',
+                // 私有空间（非公开读）：开启后前端不能自行拼接地址，需按 key 换取签名直链
+                'is_private' => false,
+                'ttl' => 3600,
             ],
             'is_sys' => 1
         ],
