@@ -17,7 +17,9 @@ use app\dao\system\admin\AdminDao;
 use app\model\tenant\PlatformMenu;
 use app\model\system\admin\Admin;
 use app\platform\event\system\LoginLogEvent;
+use app\platform\event\system\MenuBadgeDecorateEvent;
 use core\foundation\base\BaseService;
+use core\foundation\tool\MenuVariableParser;
 use core\security\jwt\enum\ClientType;
 use core\security\jwt\JwtToken;
 use Illuminate\Database\Eloquent\Collection;
@@ -173,7 +175,13 @@ class AuthService extends BaseService
             ->get()
             ->toArray();
 
-        return $this->buildPlatformMenuTree($menus);
+        $tree = $this->buildPlatformMenuTree($menus);
+
+        // 触发徽标装饰事件：业务监听器可为菜单追加/覆盖徽标
+        $event = new MenuBadgeDecorateEvent($tree, $userId, 'platform');
+        $event->dispatch();
+
+        return $event->menus;
     }
 
     /**
@@ -206,6 +214,20 @@ class AuthService extends BaseService
                 }
 
                 $node['meta']['order'] = (int)$item['sort'];
+
+                // 徽标配置来自 menu.variable 根级的 badge 域（未配置则不下发任何徽标字段）
+                // 输出 snake_case，位置在根级，与 admin 端契约一致
+                $badge = MenuVariableParser::badge($item['variable'] ?? '');
+                if ($badge !== null) {
+                    $node['badge']          = $badge['badge'];
+                    $node['badge_type']     = $badge['badge_type'];
+                    $node['badge_variants'] = $badge['badge_variants'];
+                }
+
+                // is_tab=0 → 隐藏标签页（与 admin 端语义一致）
+                if (isset($item['is_tab']) && (int)$item['is_tab'] === 0) {
+                    $node['meta']['hideInTab'] = true;
+                }
 
                 $children = $this->buildPlatformMenuTree($items, (int)$item['id']);
                 if (!empty($children)) {

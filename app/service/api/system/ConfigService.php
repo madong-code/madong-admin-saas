@@ -17,6 +17,7 @@ namespace app\service\api\system;
 use app\dao\system\config\ConfigDao;
 use app\scope\global\AccessPermissionScope;
 use core\foundation\base\BaseService;
+use core\io\upload\UploadFile;
 
 
 class ConfigService extends BaseService
@@ -86,7 +87,9 @@ class ConfigService extends BaseService
             } catch (\Exception $e) {
             }
 
-            return $default;
+            return !empty($options['with_upload_info']) && is_array($default)
+                ? $this->appendUploadInfo($default)
+                : $default;
         }
 
         $content = $configModel->getOriginal('content',null);
@@ -94,10 +97,46 @@ class ConfigService extends BaseService
         // 如果content是数组/JSON格式，返回整个数组；否则返回原值
         if (is_string($content) && !empty($content)) {
             $decoded = json_decode($content, true);
-            return json_last_error() === JSON_ERROR_NONE ? $decoded : $content;
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return !empty($options['with_upload_info']) && is_array($decoded)
+                    ? $this->appendUploadInfo($decoded)
+                    : $decoded;
+            }
+            return $content;
         }
 
         return $content ?? $default;
+    }
+
+    /**
+     * 追加存储/上传的运行时信息
+     *
+     * 前端需据此决定资源地址的拼接方式：
+     * - upload_mode=local：资源与站点同域，直接用相对路径即可
+     * - upload_mode=qiniu/oss/cos/s3：资源在云存储，必须用 cdn_url 前缀拼接，
+     *   否则会回落到站点域名请求本地文件而 404
+     *
+     * 注意：cdn_url 为运行时推算结果，始终反映当前真实存储位置，
+     * 不读取 site_setting 中可能残留的同名字段。
+     *
+     * @param array $config
+     *
+     * @return array
+     */
+    private function appendUploadInfo(array $config): array
+    {
+        $info = UploadFile::runtimeInfo();
+
+        $config['upload_mode']    = $info['mode'];
+        $config['cdn_url']        = $info['cdn_url'];
+        $config['static_url']     = $info['cdn_url'];
+        $config['cdn_url_params'] = $info['cdn_url_params'];
+        // 私有空间（非公开读）：与驱动配置、runtimeInfo() 保持同一 key（is_private）
+        // 前端不能自行拼接，须按资源 key 调 /api/file/access-urls 换取地址
+        $config['is_private']     = $info['is_private'];
+        $config['storage_prefix'] = $info['storage_prefix'];
+
+        return $config;
     }
 
     /**

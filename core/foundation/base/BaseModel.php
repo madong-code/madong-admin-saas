@@ -86,21 +86,89 @@ class BaseModel extends Model
     }
 
     /**
+     * 表字段缓存（避免每次写入都执行 SHOW COLUMNS）
+     *
+     * @var array<string, array>
+     */
+    private static array $tableColumnsCache = [];
+
+    /**
      * 模型启动中（添加创建事件）
      */
     protected static function booting(): void
     {
         static::creating(function ($model) {
-            // 自动填充 tenant_id
-            if (TenantContext::isTenantEnabled()
-                && TenantContext::isInitialized()
-                && !TenantContext::isSuperAdmin()
-                && $model->isFillable('tenant_id')
-                && empty($model->tenant_id)
+            // 租户上下文（非超管）下强制绑定当前租户：
+            // 不再信任请求体中提交的 tenant_id，一律覆盖为当前登录租户，
+            // 否则普通租户在表单里带上 tenant_id 即可把数据写入其它租户
+            if (!TenantContext::isTenantEnabled()
+                || !TenantContext::isInitialized()
+                || TenantContext::isSuperAdmin()
             ) {
-                $model->tenant_id = TenantContext::getTenantId();
+                return;
             }
+
+            // 仅对表结构中存在 tenant_id 的模型生效，避免影响系统级表（如 sys_admin_type_rel）
+            if (!$model->hasTenantColumn()) {
+                return;
+            }
+
+            $model->setAttribute('tenant_id', TenantContext::getTenantId());
         });
+    }
+
+    /**
+     * 判断当前模型对应表是否存在租户字段
+     *
+     * 以真实表结构判断，而不是 fillable 白名单：
+     * 这样即使模型没有把 tenant_id 声明为可填充，租户字段也能被正确写入。
+     * 结构探测失败（表不存在 / 连接不可用等）时退化为 fillable 判断，
+     * 保证 creating 事件不会因为探测失败而中断写入。
+     *
+     * @param string $column
+     *
+     * @return bool
+     */
+    protected function hasTenantColumn(string $column = 'tenant_id'): bool
+    {
+        $columns = $this->resolveTableColumns();
+
+        if ($columns === []) {
+            // 表结构获取失败时退化为可填充判断，避免漏写租户字段
+            return $this->isFillable($column);
+        }
+
+        return in_array($column, $columns, true);
+    }
+
+    /**
+     * 读取（并缓存）当前模型所属表的字段列表
+     *
+     * 缓存键包含连接对应的数据库名，避免独立库模式下不同租户库共用同一份缓存。
+     * 任意异常均吞掉并返回空数组，绝不向 creating 事件抛出。
+     *
+     * @return array
+     */
+    protected function resolveTableColumns(): array
+    {
+        try {
+            $connection = $this->getConnection();
+            $cacheKey   = $connection->getDatabaseName() . '.' . $connection->getTablePrefix() . $this->getTable();
+
+            if (array_key_exists($cacheKey, self::$tableColumnsCache)) {
+                return self::$tableColumnsCache[$cacheKey];
+            }
+
+            $columns = $this->getFields();
+            // 探测失败（空结果）时不写缓存，避免后续请求被永久降级为 fillable 判断
+            if ($columns !== []) {
+                self::$tableColumnsCache[$cacheKey] = $columns;
+            }
+
+            return $columns;
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     protected static function boot()

@@ -18,6 +18,7 @@ use core\business\terminal\Terminal;
 use core\business\install\traits\InstallDatabaseTrait;
 use core\business\install\traits\MenuTrait;
 use core\business\install\traits\DictTrait;
+use core\business\install\traits\MessageTrait;
 use core\business\install\traits\ConfigTrait;
 use core\business\install\traits\AdminTrait;
 use core\foundation\tool\Sse;
@@ -36,6 +37,7 @@ final class InstallService
     use InstallDatabaseTrait;
     use MenuTrait;
     use DictTrait;
+    use MessageTrait;
     use ConfigTrait;
     use AdminTrait;
     protected string $lock_file;
@@ -1510,7 +1512,11 @@ ENV;
         // 菜单 + 前台菜单 42%
         yield Sse::progress("📝 导入菜单模板 & 前台菜单模板", 42, [], $sessionUuid);
         $this->runMenu($enableTenant);
-        
+
+        // 消息分类/定义/模板 43%
+        yield Sse::progress("📝 导入消息分类/定义/模板", 43, [], $sessionUuid);
+        $this->runMessage();
+
         // 字典模板 45%
         yield Sse::progress("📝 导入字典模板", 45, [], $sessionUuid);
         $this->runDict($enableTenant);

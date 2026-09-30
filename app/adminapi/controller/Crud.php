@@ -137,7 +137,7 @@ class Crud extends Base
     public function show(Request $request): \support\Response
     {
         try {
-            $id   = $request->route->param('id');
+            $id   = $this->normalizeId($request->route->param('id'));
             $data = $this->service->get($id);
             if (empty($data)) {
                 throw new AdminException('数据未找到', 400);
@@ -168,23 +168,23 @@ class Crud extends Base
     public function update(Request $request): \support\Response
     {
         try {
-            $id   = $request->route->param('id');
             $data = $this->insertInput($request);
             if (isset($this->validate) && $this->validate) {
                 if (!$this->validate->scene('update')->check($data)) {
                     throw new \Exception($this->validate->getError());
                 }
             }
-            //路由模式兼容
-            if (empty($id)) {
-                $model      = $this->service->getModel();
-                $primaryKey = $model->getKeyName();
-                if (!array_key_exists($primaryKey, $data)) {
-                    throw new \Exception('参数异常缺少参数:' . $primaryKey);
-                }
-                $id = $data[$primaryKey];
+            // 路由模式兼容：路由中无 id 时取请求体主键
+            $id = $this->resolveId($request, $data);
+
+            $result = $this->service->update($id, $data);
+            if ($result === false) {
+                throw new AdminException('更新失败');
             }
-            $this->service->update($id, $data);
+            // affected rows 为 0 时区分「记录不存在」与「内容未变化」，避免数据没变却提示成功
+            if ((int)$result === 0 && empty($this->service->get($id))) {
+                throw new AdminException('数据不存在或已被删除');
+            }
             return Json::success('ok', []);
         } catch (\Throwable $e) {
             return Json::fail($e->getMessage());
@@ -201,15 +201,16 @@ class Crud extends Base
     public function changeStatus(Request $request): \support\Response
     {
         try {
-            $data       = $this->insertInput($request);
-            $model      = $this->service->getModel();
-            $primaryKey = $model->getKeyName();
-            if (!array_key_exists($primaryKey, $data)) {
-                throw new \Exception('参数异常缺少主键');
-            }
-            $targetModel = $model->findOrFail($data[$primaryKey]);
+            $data = $this->insertInput($request);
+            // 路由 id 与请求体主键双兼容，并统一做合法性校验与类型转换
+            $id   = $this->resolveId($request, $data);
+            $model = $this->service->getModel();
+            // 响应式请求体可能同时携带 id，避免其覆盖已归一化的主键
+            $data[$model->getKeyName()] = $id;
+
+            $targetModel = $model->findOrFail($id);
             if (empty($targetModel)) {
-                throw new \Exception('资源不存在' . $primaryKey . '=', $data[$primaryKey]);
+                throw new \Exception('资源不存在:' . $id);
             }
             $targetModel->fill($data);
             if (!$targetModel->save()) {
@@ -322,7 +323,7 @@ class Crud extends Base
         $routeId = $request->route->param('id');
 
         if (!empty($routeId) && $routeId !== '0') {
-            return [$routeId];
+            return [$this->normalizeId($routeId)];
         }
 
         // 尝试从请求体中获取 'ids' 参数
@@ -333,17 +334,102 @@ class Crud extends Base
             $ids = $request->input('data', []);
         }
 
-        // 确保返回数组格式
-        if (is_array($ids)) {
-            return $ids;
+        // 无有效参数
+        if (empty($ids) || (!is_array($ids) && !is_string($ids))) {
+            return [];
         }
 
-        // 处理逗号分隔的字符串
-        if (is_string($ids) && !empty($ids)) {
-            return explode(',', $ids);
+        return $this->normalizeIds($ids);
+    }
+
+    /**
+     * 解析主键：路由参数优先，缺失时回退到请求体主键
+     *
+     * @param Request $request
+     * @param array   $data 已过滤的请求数据
+     *
+     * @return string|int
+     */
+    protected function resolveId(Request $request, array $data = []): string|int
+    {
+        $id = $request->route->param('id');
+
+        if (empty($id) || $id === '0') {
+            $model      = $this->service->getModel();
+            $primaryKey = $model->getKeyName();
+            if (!array_key_exists($primaryKey, $data)) {
+                throw new \Exception('参数异常缺少参数:' . $primaryKey);
+            }
+            $id = $data[$primaryKey];
         }
 
-        return [];
+        return $this->normalizeId($id);
+    }
+
+    /**
+     * 主键归一化：校验取值合法，并按模型主键类型转换
+     *
+     * - 拒绝数组/对象，避免非法条件被当作关联数组传入 DAO（BaseDao::update 支持 array 条件）
+     * - 去除首尾空白并限制字符集，防止拼接出异常查询条件
+     * - 自增整型主键统一转为 int，避免严格模式下 bigint 与字符串比较匹配失败
+     *
+     * @param mixed $id
+     *
+     * @return string|int
+     */
+    protected function normalizeId(mixed $id): string|int
+    {
+        if (is_array($id) || is_object($id)) {
+            throw new AdminException('参数 id 非法');
+        }
+
+        $id = trim((string)$id);
+        if ($id === '') {
+            throw new AdminException('参数 id 不能为空');
+        }
+
+        // 允许雪花ID/自增ID（数字）与 UUID（字母、数字、中划线、下划线）
+        if (!preg_match('/^[\w-]+$/', $id)) {
+            throw new AdminException('参数 id 非法');
+        }
+
+        $model = $this->service->getModel();
+        if ($model->getKeyType() === 'int' && is_numeric($id)) {
+            return (int)$id;
+        }
+
+        return $id;
+    }
+
+    /**
+     * 批量主键归一化（自动忽略空值，去重后返回）
+     *
+     * @param array|string $ids
+     *
+     * @return array
+     */
+    protected function normalizeIds(array|string $ids): array
+    {
+        if (is_string($ids)) {
+            $ids = explode(',', $ids);
+        }
+
+        $result = [];
+        foreach ($ids as $id) {
+            if (is_array($id) || is_object($id)) {
+                continue;
+            }
+            $id = trim((string)$id);
+            if ($id === '') {
+                continue;
+            }
+            $normalized = $this->normalizeId($id);
+            if (!in_array($normalized, $result, true)) {
+                $result[] = $normalized;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -356,9 +442,12 @@ class Crud extends Base
     public function recovery(Request $request): \support\Response
     {
         try {
+            // 主键来源与删除保持一致，并统一做合法性校验与类型转换
             $id   = $request->route->param('id');
-            $data = $request->input('data', []);
-            $data = !empty($id) && $id !== '0' ? $id : $data;
+            $raw  = $request->input('data', []);
+            $data = !empty($id) && $id !== '0'
+                ? [$this->normalizeId($id)]
+                : (is_array($raw) || is_string($raw) ? $this->normalizeIds($raw) : []);
             if (empty($data)) {
                 throw new AdminException('参数错误');
             }

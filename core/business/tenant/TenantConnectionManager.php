@@ -17,6 +17,7 @@ use app\model\tenant\Tenant;
 use core\foundation\exception\handler\TenantException;
 use core\business\tenant\context\TenantContext;
 use Illuminate\Container\Container;
+use support\Context;
 use support\Db as DB;
 
 /**
@@ -25,14 +26,26 @@ use support\Db as DB;
  * 负责管理库隔离模式下的租户数据库连接
  * 实现连接的创建、获取、释放等
  * 使用 Laravel ORM 连接方式
+ *
+ * 协程安全说明：
+ *   连接配置模板（init() 设定的连接模板/库名模式/前缀）与动态注册到容器 config 的
+ *   连接定义属于「进程级共享配置」，跨请求复用，保留静态；
+ *   「当前请求所在租户连接」属于请求态，存放于 support\Context（键 tenant.connection），
+ *   协程模式下按协程隔离，避免并发串号。
+ *   类名 / 命名空间 / 文件路径 / 公开方法签名保持不变，调用方无需改动。
  */
 class TenantConnectionManager
 {
     /**
-     * 连接配置
+     * 连接配置（进程级共享，跨请求复用）
      * @var array
      */
     protected static array $config = [];
+
+    /**
+     * 上下文键：当前请求的租户连接名
+     */
+    private const CTX_CONNECTION = 'tenant.connection';
 
     /**
      * 初始化
@@ -119,6 +132,10 @@ class TenantConnectionManager
         TenantContext::setIsolationMode('database');
 
         $connection = self::getConnection($tenantId, $autoCreate);
+
+        // 记录当前请求所在租户连接（请求态，存放于协程上下文）
+        Context::set(self::CTX_CONNECTION, self::getConnectionName($tenantId));
+
         return $connection;
     }
 
@@ -129,8 +146,9 @@ class TenantConnectionManager
      */
     public static function getCurrentConnection(): ?\Illuminate\Database\Connection
     {
+        $connectionName = Context::get(self::CTX_CONNECTION);
         try {
-            return DB::connection();
+            return $connectionName ? DB::connection($connectionName) : DB::connection();
         } catch (\Exception $e) {
             return null;
         }
@@ -139,11 +157,13 @@ class TenantConnectionManager
     /**
      * 释放当前连接
      *
+     * Laravel 连接由连接池统一管理，无需显式释放，仅清理请求态记录。
+     *
      * @return void
      */
     public static function releaseCurrentConnection(): void
     {
-        // Laravel 不需要显式释放连接
+        Context::set(self::CTX_CONNECTION, null);
     }
 
     /**

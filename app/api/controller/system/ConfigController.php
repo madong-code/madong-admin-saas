@@ -66,6 +66,11 @@ final class ConfigController extends Base
                 $options['group_code'] = $groupCode;
                 $options['fallback_groups'] = ['default'];
             }
+            // 站点配置：追加存储运行时信息（upload_mode / cdn_url / is_private / storage_prefix），
+            // 前端据此决定资源地址是直接拼接还是换取签名直链
+            if ($code === 'site_setting') {
+                $options['with_upload_info'] = true;
+            }
             $result = $this->service->config($code, [], $options);
             return Json::success('操作成功', $result);
         } catch (\Exception $e) {

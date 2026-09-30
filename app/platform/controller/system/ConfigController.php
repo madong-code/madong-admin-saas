@@ -86,6 +86,10 @@ final class ConfigController extends Base
             if (!empty($groupCode)) {
                 $options['group_code'] = $groupCode;
             }
+            // 站点设置需附带存储运行时信息（upload_mode/cdn_url/is_private/storage_prefix）
+            if ($code === 'site_setting') {
+                $options['with_upload_info'] = true;
+            }
             $result = $this->service->config($code, [], $options);
             return Json::success('操作成功', $result);
         } catch (\Throwable $e) {

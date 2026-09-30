@@ -236,8 +236,9 @@ class AdminService extends BaseService
      */
     public function login(string $username, string $password = '', string $type = 'admin', string $grantType = 'default', array $params = []): array
     {
-        $tenantId = $params['tenant_id'] ?? null;
-        $tenant   = null;
+        $tenantId   = $params['tenant_id'] ?? null;
+        $tenantCode = $params['tenant_code'] ?? null;
+        $tenant     = null;
 
         // 是否启用多租户
         $multiTenantEnabled = config('tenant.enabled', false) || filter_var(env('APP_TENANT_ENABLED', false), FILTER_VALIDATE_BOOLEAN);
@@ -245,18 +246,33 @@ class AdminService extends BaseService
         if ($multiTenantEnabled) {
             // ========== 多租户登录流程 ==========
 
-            // 1. tenant_id 必传
-            if (empty($tenantId)) {
-                throw new AdminException('多租户模式下 tenant_id 为必填参数，请选择租户后登录');
+            // 1. 租户标识必传：优先租户代码（tenant_code），其次租户ID（tenant_id）
+            if (empty($tenantCode) && empty($tenantId)) {
+                throw new AdminException('多租户模式下请选择租户或输入租户代码后登录');
             }
 
             // 2. 获取租户详情（包含 database_mode / database_name / db_setting 等）
-            $tenant = Tenant::withoutGlobalScopes()->find($tenantId);
-            if (!$tenant || !$tenant->isActive()) {
-                throw new AdminException(
-                    $tenant ? '租户已停用' : '租户不存在（ID: ' . $tenantId . '）'
-                );
+            if (!empty($tenantCode)) {
+                if (!Tenant::validateCode((string)$tenantCode)) {
+                    throw new AdminException('租户代码格式不正确');
+                }
+                $tenant = Tenant::findByCode((string)$tenantCode);
+                if (!$tenant) {
+                    throw new AdminException('租户不存在（代码: ' . $tenantCode . '）');
+                }
+            } else {
+                $tenant = Tenant::withoutGlobalScopes()->find($tenantId);
+                if (!$tenant) {
+                    throw new AdminException('租户不存在（ID: ' . $tenantId . '）');
+                }
             }
+
+            if (!$tenant->isActive()) {
+                throw new AdminException('租户已停用');
+            }
+
+            // 统一归一为租户ID，供后续分支判断与连接切换使用
+            $tenantId = (string)$tenant->id;
 
             $isDatabaseMode = $tenant->database_mode === Tenant::MODE_DATABASE;
 
@@ -305,6 +321,11 @@ class AdminService extends BaseService
             }
 
             // 6. 验证并登录
+            // 多租户下账号查找范围已限定到指定租户，账号不存在与密码错误需区分提示，
+            // 否则用户在「租户正确但没有该账号」时会误以为密码有问题
+            if (!$adminInfo) {
+                throw new AdminException('账号不存在');
+            }
             $this->validateAdminStatus($adminInfo);
             $this->validatePassword($adminInfo, $password, $grantType);
 

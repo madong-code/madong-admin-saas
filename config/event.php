@@ -15,9 +15,15 @@ return [
     'platform.operation.log' => [
         [\app\platform\listener\system\OperationLogListener::class, 'handle'],
     ],
+    // 平台端菜单徽标装饰：业务监听器可在此为菜单追加/覆盖徽标
+    'platform.menu.badge_decorate' => [],
 
     'adminapi.menu.formatting' => [
         [\app\adminapi\listener\system\MenuFormattingListener::class, 'handle'],
+    ],
+    // 菜单徽标装饰：业务监听器可在此为菜单追加/覆盖徽标
+    'adminapi.menu.badge_decorate' => [
+        [\app\adminapi\listener\system\MenuBadgeSampleListener::class, 'handle'],
     ],
     // 积分变动事件
     'adminapi.points.changed' => [

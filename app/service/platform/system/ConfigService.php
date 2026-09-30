@@ -16,6 +16,8 @@ namespace app\service\platform\system;
 use app\dao\system\config\ConfigDao;
 use core\business\tenant\scope\TenantScope;
 use core\foundation\base\BaseService;
+use core\io\upload\UploadFile;
+use core\io\upload\UploadScene;
 
 /**
  * 平台端系统配置 Service
@@ -63,15 +65,52 @@ class ConfigService extends BaseService
                 $this->dao->getModel()->withoutGlobalScope(TenantScope::class)->create($configData);
             } catch (\Exception $e) {
             }
-            return $default;
+            return !empty($options['with_upload_info']) && is_array($default)
+                ? $this->appendUploadInfo($default)
+                : $default;
         }
 
         $content = $configModel->getOriginal('content', null);
         if (is_string($content) && !empty($content)) {
             $decoded = json_decode($content, true);
-            return json_last_error() === JSON_ERROR_NONE ? $decoded : $content;
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return $content;
+            }
+            return !empty($options['with_upload_info']) && is_array($decoded)
+                ? $this->appendUploadInfo($decoded)
+                : $decoded;
         }
         return $content ?? $default;
+    }
+
+    /**
+     * 追加存储/上传的运行时信息（平台场景）
+     *
+     * 前端需据此决定资源地址的拼接方式：
+     * - upload_mode=local：资源与站点同域，直接用相对路径即可
+     * - upload_mode=qiniu/oss/cos/s3：资源在云存储，必须用 cdn_url 前缀拼接
+     * - is_private=true：私有空间，前端不能自行拼接，须按资源 key 调
+     *   /platformapi/file/access-urls 换取带签名的临时直链
+     *
+     * 注意：cdn_url / static_url 为运行时推算结果，始终反映当前真实存储位置，
+     * 不读取 site_setting 中可能残留的同名字段。
+     *
+     * @param array $config
+     *
+     * @return array
+     */
+    private function appendUploadInfo(array $config): array
+    {
+        $info = UploadFile::runtimeInfo(UploadScene::platform());
+
+        $config['upload_mode']    = $info['mode'];
+        $config['cdn_url']        = $info['cdn_url'];
+        $config['static_url']     = $info['cdn_url'];
+        $config['cdn_url_params'] = $info['cdn_url_params'];
+        $config['is_private']     = $info['is_private'];
+        $config['storage_prefix'] = $info['storage_prefix'];
+
+        return $config;
     }
 
     /**
@@ -132,13 +171,16 @@ class ConfigService extends BaseService
             ->first();
 
         if (!$config) {
-            return $default;
+            return is_array($default) ? $this->appendUploadInfo($default) : $default;
         }
 
         $content = $config->getRawOriginal('content');
         if (is_string($content) && !empty($content)) {
             $decoded = json_decode($content, true);
-            return json_last_error() === JSON_ERROR_NONE ? $decoded : $content;
+            // 登录前的站点信息同样需要存储运行时信息，供前端拼接/换取资源地址
+            return json_last_error() === JSON_ERROR_NONE && is_array($decoded)
+                ? $this->appendUploadInfo($decoded)
+                : $decoded;
         }
 
         return $content ?? $default;

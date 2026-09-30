@@ -124,7 +124,8 @@ final class LoginController extends Crud
             $type      = $request->input('type', 'admin');
             $grantType = $request->input('grant_type', 'deafult');//refresh_token   sms   default 可以自行定义拓展登录方式
             $keyId     = $request->input('key_id', '');//获取公钥Id
-            $tenantId  = $request->input('tenant_id');//多租户登录
+            $tenantId  = $request->input('tenant_id');//多租户登录（租户ID）
+            $tenantCode = $request->input('tenant_code');//多租户登录（租户代码，与 tenant_id 二选一）
 
 
             $captcha = new Captcha();
@@ -147,8 +148,9 @@ final class LoginController extends Crud
             }
 
             $data = $this->service->login($username, $password, $type, $grantType, [
-                'key_id'    => $keyId ?? '',
-                'tenant_id' => $tenantId,
+                'key_id'      => $keyId ?? '',
+                'tenant_id'   => $tenantId,
+                'tenant_code' => $tenantCode,
             ]);
 
             return Json::success('ok', $data);
@@ -194,19 +196,56 @@ final class LoginController extends Crud
         summary: '租户列表（供登录选择）',
         tags: ['无需授权'],
     )]
+    #[OA\Parameter(
+        name: 'keyword',
+        description: '按租户名称或代码模糊搜索（可选）',
+        in: 'query',
+        required: false,
+        schema: new OA\Schema(type: 'string')
+    )]
     #[SimpleResponse(schema: [], example: [])]
     public function getTenantList(Request $request): \support\Response
     {
         try {
-            $tenants = Tenant::getActiveTenants()->map(fn($t) => [
+            $keyword = trim((string)$request->input('keyword', ''));
+
+            $query = Tenant::withoutGlobalScopes()
+                ->where('status', Tenant::STATUS_ACTIVE)
+                ->orderBy('sort')
+                ->orderBy('id');
+
+            if ($keyword !== '') {
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('name', 'like', '%' . $keyword . '%')
+                        ->orWhere('code', 'like', '%' . $keyword . '%');
+                });
+            }
+
+            $format = fn($t) => [
                 'id'            => (string)$t->id,
                 'name'          => $t->name,
                 'code'          => $t->code,
                 'domain'        => $t->domain,
                 'database_mode' => $t->database_mode,
                 'database_name' => $t->database_name,
+            ];
+
+            // 不传 page 时保持旧行为：返回全量数组
+            $page = $request->input('page');
+            if ($page === null || $page === '') {
+                return Json::success('ok', $query->get()->map($format));
+            }
+
+            $pageSize = (int)$request->input('page_size', 20);
+            $pageSize = max(1, min($pageSize, 200));
+            $page     = max(1, (int)$page);
+
+            $paginator = $query->paginate($pageSize, ['*'], 'page', $page);
+
+            return Json::success('ok', [
+                'list'  => $paginator->getCollection()->map($format),
+                'total' => $paginator->total(),
             ]);
-            return Json::success('ok', $tenants);
         } catch (\Throwable $e) {
             return Json::fail($e->getMessage());
         }

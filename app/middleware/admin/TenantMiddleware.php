@@ -59,10 +59,8 @@ class TenantMiddleware implements MiddlewareInterface
             return $next($request);
         }
 
-        // 每次请求先清除上一个请求残留的上下文，避免 webman 长进程中
-        // static 属性跨请求泄漏（TenantContext::$tenantId, $isolationMode 等）导致
-        // 后续模型连接选择错误
-        TenantContext::clear();
+        // 租户上下文存于 support\Context，由框架在每个请求开始时自动 reset，
+        // 协程模式下按协程隔离，无需在此显式清理
 
         $tenantId = $request->header('X-Tenant-Id')
             ?? $request->input('tenant_id')
@@ -77,8 +75,6 @@ class TenantMiddleware implements MiddlewareInterface
         foreach ($this->except as $prefix) {
             $prefix = ltrim($prefix, '/');
             if ($path === $prefix || str_starts_with($path, $prefix . '/')) {
-                // 清除上一个请求残留的租户上下文，避免泄漏到当前请求
-                TenantContext::clear();
                 return $next($request);
             }
         }

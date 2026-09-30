@@ -17,52 +17,43 @@ use app\model\tenant\Tenant;
 use core\foundation\exception\handler\TenantException;
 use core\infrastructure\cache\CacheService;
 use Illuminate\Support\Facades\Cache;
+use support\Context;
 
 /**
  * 租户上下文管理器
- * 
+ *
  * 负责管理当前请求的租户上下文信息
  * 实现租户信息的获取、设置、清除等操作
  * 使用 Laravel Cache
+ *
+ * 协程安全说明：
+ *   所有请求态数据均存放于 support\Context（协程上下文），协程模式下天然按协程隔离，
+ *   非协程模式下退化为「进程内全局」，与改造前行为一致。
+ *   类名 / 命名空间 / 文件路径 / 公开方法签名保持不变，调用方无需改动。
+ *   上下文键统一前缀 tenant.：tenant.id / tenant.info / tenant.isolation_mode /
+ *   tenant.is_admin / tenant.data / tenant.memory_cache。
  */
 class TenantContext
 {
+    /** 上下文键前缀 */
+    private const KEY_PREFIX = 'tenant.';
+
     /**
-     * 当前租户ID
-     * @var int|string|null
+     * 读取上下文值
      */
-    protected static $tenantId;
-    
+    private static function ctxGet(string $name, $default = null)
+    {
+        return Context::get(self::KEY_PREFIX . $name, $default);
+    }
+
     /**
-     * 当前租户信息
-     * @var array|null
+     * 写入上下文值
      */
-    protected static $tenantInfo;
-    
-    /**
-     * 隔离模式
-     * @var string
-     */
-    protected static $isolationMode;
-    
-    /**
-     * 是否为系统管理员
-     * @var bool
-     */
-    protected static $isAdmin = false;
-    
-    /**
-     * 上下文数据存储
-     * @var array
-     */
-    protected static $data = [];
-    
-    /**
-     * 内存缓存（用于避免数据库查询）
-     * @var array
-     */
-    protected static $memoryCache = [];
-    
+    private static function ctxSet(string $name, $value): void
+    {
+        Context::set(self::KEY_PREFIX . $name, $value);
+    }
+
     /**
      * 初始化上下文
      * 
@@ -72,10 +63,10 @@ class TenantContext
      */
     public static function init($tenantId = null, ?array $tenantInfo = null): void
     {
-        self::$tenantId = $tenantId;
-        self::$tenantInfo = $tenantInfo;
-        self::$isolationMode = null;
-        self::$data = [];
+        self::ctxSet('id', $tenantId);
+        self::ctxSet('info', $tenantInfo);
+        self::ctxSet('isolation_mode', null);
+        self::ctxSet('data', []);
     }
     
     /**
@@ -89,11 +80,13 @@ class TenantContext
     public static function setTenant($tenantId, ?array $tenantInfo = null, bool $autoLoad = true): void
     {
         self::validateTenantId($tenantId);
-        self::$tenantId = $tenantId;
-        
+        self::ctxSet('id', $tenantId);
+
+        $currentInfo = self::ctxGet('info');
+
         if ($tenantInfo !== null) {
-            self::$tenantInfo = $tenantInfo;
-        } elseif ($autoLoad && (self::$tenantInfo === null || (self::$tenantInfo['id'] ?? self::$tenantInfo['tenant_id'] ?? null) != $tenantId)) {
+            self::ctxSet('info', $tenantInfo);
+        } elseif ($autoLoad && ($currentInfo === null || ($currentInfo['id'] ?? $currentInfo['tenant_id'] ?? null) != $tenantId)) {
             // 自动加载租户信息
             self::loadTenantInfo($tenantId);
         }
@@ -106,7 +99,7 @@ class TenantContext
      */
     public static function getTenantId()
     {
-        return self::$tenantId;
+        return self::ctxGet('id');
     }
     
     /**
@@ -116,10 +109,11 @@ class TenantContext
      */
     public static function getTenantInfo(): ?array
     {
-        if (self::$tenantId !== null && self::$tenantInfo === null) {
-            self::loadTenantInfo(self::$tenantId);
+        $tenantId = self::ctxGet('id');
+        if ($tenantId !== null && self::ctxGet('info') === null) {
+            self::loadTenantInfo($tenantId);
         }
-        return self::$tenantInfo;
+        return self::ctxGet('info');
     }
     
     /**
@@ -130,7 +124,7 @@ class TenantContext
      */
     public static function getTenantIdOrDefault($default = null)
     {
-        return self::$tenantId ?? $default;
+        return self::ctxGet('id') ?? $default;
     }
     
     /**
@@ -143,7 +137,7 @@ class TenantContext
         if (self::isSingleMode()) {
             return false;
         }
-        return self::$tenantId !== null;
+        return self::ctxGet('id') !== null;
     }
     
     /**
@@ -158,7 +152,7 @@ class TenantContext
         if (!in_array($mode, $validModes)) {
             throw new TenantException("Invalid isolation mode: {$mode}");
         }
-        self::$isolationMode = $mode;
+        self::ctxSet('isolation_mode', $mode);
     }
     
     /**
@@ -171,8 +165,9 @@ class TenantContext
         if (self::isSingleMode()) {
             return 'single';
         }
-        if (self::$isolationMode !== null) {
-            return self::$isolationMode;
+        $mode = self::ctxGet('isolation_mode');
+        if ($mode !== null) {
+            return $mode;
         }
         return config('tenant.default_mode', 'field');
     }
@@ -185,7 +180,7 @@ class TenantContext
      */
     public static function setAdminMode(bool $isAdmin): void
     {
-        self::$isAdmin = $isAdmin;
+        self::ctxSet('is_admin', $isAdmin);
     }
     
     /**
@@ -195,7 +190,7 @@ class TenantContext
      */
     public static function isAdmin(): bool
     {
-        return self::$isAdmin;
+        return (bool) self::ctxGet('is_admin', false);
     }
     
     /**
@@ -207,7 +202,9 @@ class TenantContext
      */
     public static function setData(string $key, $value): void
     {
-        self::$data[$key] = $value;
+        $data = self::ctxGet('data', []);
+        $data[$key] = $value;
+        self::ctxSet('data', $data);
     }
     
     /**
@@ -219,7 +216,8 @@ class TenantContext
      */
     public static function getData(string $key, $default = null)
     {
-        return self::$data[$key] ?? $default;
+        $data = self::ctxGet('data', []);
+        return $data[$key] ?? $default;
     }
     
     /**
@@ -230,7 +228,8 @@ class TenantContext
      */
     public static function hasData(string $key): bool
     {
-        return isset(self::$data[$key]);
+        $data = self::ctxGet('data', []);
+        return isset($data[$key]);
     }
     
     /**
@@ -242,25 +241,30 @@ class TenantContext
     public static function clearData(?string $key = null): void
     {
         if ($key === null) {
-            self::$data = [];
+            self::ctxSet('data', []);
         } else {
-            unset(self::$data[$key]);
+            $data = self::ctxGet('data', []);
+            unset($data[$key]);
+            self::ctxSet('data', $data);
         }
     }
     
     /**
      * 清除租户上下文
      * 
+     * 仅清空租户相关键，不影响协程上下文中的其他数据。
+     * 迁移到协程上下文后，请求结束由框架自动销毁，通常无需显式调用。
+     * 
      * @return void
      */
     public static function clear(): void
     {
-        self::$tenantId = null;
-        self::$tenantInfo = null;
-        self::$isolationMode = null;
-        self::$isAdmin = false;
-        self::$data = [];
-        self::$memoryCache = [];
+        self::ctxSet('id', null);
+        self::ctxSet('info', null);
+        self::ctxSet('isolation_mode', null);
+        self::ctxSet('is_admin', false);
+        self::ctxSet('data', []);
+        self::ctxSet('memory_cache', []);
     }
     
     /**
@@ -273,8 +277,9 @@ class TenantContext
     {
         // 检查内存缓存
         $cacheKey = "tenant_info_{$tenantId}";
-        if (isset(self::$memoryCache[$cacheKey])) {
-            self::$tenantInfo = self::$memoryCache[$cacheKey];
+        $memoryCache = self::ctxGet('memory_cache', []);
+        if (isset($memoryCache[$cacheKey])) {
+            self::ctxSet('info', $memoryCache[$cacheKey]);
             return;
         }
         
@@ -291,8 +296,7 @@ class TenantContext
                 // 尝试从缓存获取
                 $cached = Cache::get($cacheKeyFull);
                 if ($cached !== null) {
-                    self::$memoryCache[$cacheKey] = $cached;
-                    self::$tenantInfo = $cached;
+                    self::rememberTenantInfo($cacheKey, $cached);
                     return;
                 }
                 
@@ -303,23 +307,37 @@ class TenantContext
                 // 写入缓存
                 Cache::put($cacheKeyFull, $tenantInfo, $cacheTtl);
                 
-                self::$memoryCache[$cacheKey] = $tenantInfo;
-                self::$tenantInfo = $tenantInfo;
+                self::rememberTenantInfo($cacheKey, $tenantInfo);
             } else {
                 // 不使用缓存，直接从数据库加载
                 $tenant = Tenant::withoutGlobalScopes()->find($tenantId);
-                self::$tenantInfo = $tenant ? self::tenantToInternalArray($tenant) : null;
+                self::ctxSet('info', $tenant ? self::tenantToInternalArray($tenant) : null);
             }
         } catch (\Exception $e) {
             // 出错时直接从数据库加载
             try {
                 $tenant = Tenant::withoutGlobalScopes()->find($tenantId);
-                self::$tenantInfo = $tenant ? self::tenantToInternalArray($tenant) : null;
+                self::ctxSet('info', $tenant ? self::tenantToInternalArray($tenant) : null);
             } catch (\Exception $e2) {
                 // 模型类不存在或数据库连接失败
-                self::$tenantInfo = null;
+                self::ctxSet('info', null);
             }
         }
+    }
+
+    /**
+     * 写入内存缓存并同步租户信息
+     *
+     * @param string $cacheKey
+     * @param array|null $tenantInfo
+     * @return void
+     */
+    private static function rememberTenantInfo(string $cacheKey, ?array $tenantInfo): void
+    {
+        $memoryCache = self::ctxGet('memory_cache', []);
+        $memoryCache[$cacheKey] = $tenantInfo;
+        self::ctxSet('memory_cache', $memoryCache);
+        self::ctxSet('info', $tenantInfo);
     }
     
     /**
@@ -422,7 +440,7 @@ class TenantContext
         if (self::isSingleMode()) {
             return false;
         }
-        return config('tenant.enabled', true);
+        return (bool) config('tenant.enable', true);
     }
 
     /**
@@ -435,7 +453,7 @@ class TenantContext
         if (self::isSingleMode()) {
             return false;
         }
-        return self::$tenantId !== null;
+        return self::ctxGet('id') !== null;
     }
 
     /**
@@ -446,7 +464,7 @@ class TenantContext
      */
     public static function isSuperAdmin(): bool
     {
-        return self::$isAdmin;
+        return (bool) self::ctxGet('is_admin', false);
     }
 
     /**
@@ -456,9 +474,10 @@ class TenantContext
      */
     public static function getConnectionName(): ?string
     {
+        $tenantId = self::ctxGet('id');
         $mode = self::getIsolationMode();
-        if ($mode === 'database' && self::$tenantId !== null) {
-            return 'tenant_' . self::$tenantId;
+        if ($mode === 'database' && $tenantId !== null) {
+            return 'tenant_' . $tenantId;
         }
 
         return null;

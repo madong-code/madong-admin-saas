@@ -38,6 +38,7 @@ use core\business\plugin\traits\SeedTrait;
 use core\business\plugin\traits\MenuTrait;
 use core\business\plugin\traits\TemplateTrait;
 use core\business\plugin\traits\DependencyTrait;
+use core\business\message\MessageDataSync;
 use core\business\tenant\context\TenantContext;
 
 class PluginInstall
@@ -396,6 +397,9 @@ class PluginInstall
 
         // 删除插件菜单
         $this->clearMenus();
+
+        // 清理插件消息分类/定义/模板（按 source 精确清理）
+        $this->clearMessageData();
     }
 
     /**
@@ -558,122 +562,70 @@ class PluginInstall
     }
 
     /**
-     * 导入消息分类/模块数据
+     * 导入消息分类/定义/模板数据
      *
-     * 扫描插件 resource/data/message/category.php 文件并导入到数据库。
+     * 扫描插件 resource/data/message/category.php 文件并导入到数据库（source=plugin:{name}）。
      * 自动在 afterInstall 中调用，插件无需手动处理。
      *
-     * 插件数据文件格式（与核心文件相同，children 嵌套）：
+     * 插件数据文件格式（与核心文件相同）：
      * [
-     *   ['key' => 'cat_key', 'name' => '分类名', 'sort' => 10, 'children' => [
-     *     ['key' => 'mod_key', 'name' => '模块名', 'nav_type' => 'router', ...],
+     *   ['key' => 'cat_key', 'name' => '分类名', 'sort' => 10, 'definitions' => [
+     *     ['key' => 'def_key', 'name' => '定义名', 'nav_type' => 'router', 'templates' => [
+     *       ['type' => 'system', 'key' => 'tpl_key', 'title' => '标题', 'content_template' => '内容'],
+     *     ]],
      *   ]],
      * ]
+     *
+     * 幂等：分类 source+key、定义 category_id+key、模板 type+key；
+     * sync 模式会同时删除本来源中数据文件已移除的节点，重复安装不会产生脏数据。
      */
     protected function importMessageData(): void
     {
-        $dataDir = $this->pluginPath . '/resource/data/message';
-        if (!is_dir($dataDir)) {
+        $categories = $this->loadMessageFile();
+        if ($categories === null) {
             return;
         }
 
-        // 确保连接配置
-        if ($this->connection) {
-            \Illuminate\Database\Capsule\Manager::connection($this->connection);
+        $stat = (new MessageDataSync('plugin:' . $this->getPluginName()))
+            ->sync($categories, MessageDataSync::MODE_SYNC);
+
+        $this->output(sprintf(
+            '  ✅ Imported plugin message data (created %d, updated %d, deleted %d)',
+            $stat['created'],
+            $stat['updated'],
+            $stat['deleted']
+        ));
+    }
+
+    /**
+     * 清理插件消息数据
+     *
+     * 按 source=plugin:{name} 精确清理分类/定义/模板及其关联，
+     * 不影响 source=system（框架）与 source=user（后台自建）的数据。
+     * 消息数据为平台级共享数据（tenant_id 为空），因此仅平台上下文执行清理。
+     */
+    protected function clearMessageData(): void
+    {
+        if (!$this->isPlatformContext()) {
+            return;
         }
 
-        $now = time();
-        $catFile = $dataDir . '/category.php';
+        $deleted = (new MessageDataSync('plugin:' . $this->getPluginName()))->purge();
+        $this->output("  ✅ Cleared plugin message data (deleted {$deleted})");
+    }
+
+    /**
+     * 读取插件消息数据文件
+     */
+    protected function loadMessageFile(): ?array
+    {
+        $catFile = $this->pluginPath . '/resource/data/message/category.php';
         if (!is_file($catFile)) {
-            return;
+            return null;
         }
 
         $categories = require $catFile;
-        if (!is_array($categories)) {
-            return;
-        }
-
-        foreach ($categories as $cat) {
-            $definitions = $cat['definitions'] ?? $cat['children'] ?? [];
-            unset($cat['definitions'], $cat['children']);
-
-            // 查找或创建分类（通过 key 定位）
-            $existing = \app\model\content\message\Category::where('key', $cat['key'])
-                ->whereNull('tenant_id')
-                ->first();
-
-            if ($existing && $existing->is_system) {
-                $categoryId = $existing->id;
-                $existing->fill([
-                    'name'        => $cat['name'],
-                    'icon'        => $cat['icon'] ?? $existing->icon,
-                    'description' => $cat['description'] ?? '',
-                    'sort'        => $cat['sort'] ?? 0,
-                ]);
-                $existing->updated_at = $now;
-                $existing->save();
-            } elseif (!$existing) {
-                $categoryId = \core\io\uuid\Snowflake::generate();
-                \app\model\content\message\Category::create([
-                    'id'          => $categoryId,
-                    'pid'         => 0,
-                    'key'         => $cat['key'],
-                    'name'        => $cat['name'],
-                    'icon'        => $cat['icon'] ?? null,
-                    'description' => $cat['description'] ?? '',
-                    'sort'        => $cat['sort'] ?? 0,
-                    'level'       => 0,
-                    'path'        => '0',
-                    'is_show'     => 1,
-                    'is_system'   => 1,
-                    'enabled'     => 1,
-                    'tenant_id'   => null,
-                    'created_at'  => $now,
-                    'updated_at'  => $now,
-                ]);
-            } else {
-                $categoryId = $existing->id;
-            }
-
-            // 导入消息定义（到 sys_message_definition）
-            foreach ($definitions as $def) {
-                $existingDef = \app\model\content\message\Definition::where('category_id', $categoryId)
-                    ->where('key', $def['key'])
-                    ->whereNull('tenant_id')
-                    ->first();
-
-                if ($existingDef && $existingDef->is_system) {
-                    $existingDef->fill([
-                        'name'        => $def['name'],
-                        'description' => $def['description'] ?? '',
-                        'default_on'  => $def['default_on'] ?? true,
-                        'nav_type'    => $def['nav_type'] ?? null,
-                        'nav_value'   => $def['nav_value'] ?? null,
-                        'sort'        => $def['sort'] ?? 0,
-                    ]);
-                    $existingDef->updated_at = $now;
-                    $existingDef->save();
-                } elseif (!$existingDef) {
-                    \app\model\content\message\Definition::create([
-                        'id'           => \core\io\uuid\Snowflake::generate(),
-                        'category_id'  => $categoryId,
-                        'key'          => $def['key'],
-                        'name'         => $def['name'],
-                        'description'  => $def['description'] ?? '',
-                        'default_on'   => $def['default_on'] ?? true,
-                        'nav_type'     => $def['nav_type'] ?? null,
-                        'nav_value'    => $def['nav_value'] ?? null,
-                        'sort'         => $def['sort'] ?? 0,
-                        'is_system'    => 1,
-                        'enabled'      => 1,
-                        'tenant_id'    => null,
-                        'created_at'   => $now,
-                        'updated_at'   => $now,
-                    ]);
-                }
-            }
-        }
-        $this->output("  ✅ Imported plugin message categories with definitions");
+        return is_array($categories) ? $categories : null;
     }
 
     /**

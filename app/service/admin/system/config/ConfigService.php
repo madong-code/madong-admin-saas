@@ -17,6 +17,8 @@ namespace app\service\admin\system\config;
 use app\dao\system\config\ConfigDao;
 use app\scope\global\AccessPermissionScope;
 use core\foundation\base\BaseService;
+use core\io\upload\UploadFile;
+use core\io\upload\UploadScene;
 
 class ConfigService extends BaseService
 {
@@ -44,12 +46,18 @@ class ConfigService extends BaseService
             $map['group_code'] = $options['group_code'];
         }
 
+        // 存储运行时信息所属场景：缺省为 admin（单租户/default 分组），
+        // 配置来自平台分组时必须传 UploadScene::platform()，否则下发的是另一套存储空间
+        $scene = $options['upload_scene'] ?? null;
+
         // 查询配置（TenantScope 会自动按当前租户过滤）
         $configModel = $this->dao->get($map, ['*'], [], '', [AccessPermissionScope::class]);
 
         // 没有配置直接返回默认值
         if (!$configModel) {
-            return $default;
+            return !empty($options['with_upload_info']) && is_array($default)
+                ? $this->appendUploadInfo($default, $scene)
+                : $default;
         }
 
         $content = $configModel->getOriginal('content', null);
@@ -57,17 +65,58 @@ class ConfigService extends BaseService
         // 如果content是数组/JSON格式，返回整个数组；否则返回原值
         if (is_string($content) && !empty($content)) {
             $decoded = json_decode($content, true);
-            return json_last_error() === JSON_ERROR_NONE ? $decoded : $content;
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return !empty($options['with_upload_info']) && is_array($decoded)
+                    ? $this->appendUploadInfo($decoded, $scene)
+                    : $decoded;
+            }
+            return $content;
         }
 
         return $content ?? $default;
     }
 
     /**
+     * 追加存储/上传的运行时信息
+     *
+     * 前端需据此决定资源地址的拼接方式：
+     * - upload_mode=local：资源与站点同域，直接用相对路径即可
+     * - upload_mode=qiniu/oss/cos/s3：资源在云存储，必须用 cdn_url（admin 端读 static_url）前缀，
+     *   否则会回落到站点域名请求本地文件而 404
+     *
+     * 注意：cdn_url / static_url 为运行时推算结果，始终反映当前真实存储位置，
+     * 不读取 site_setting 中可能残留的同名字段。
+     *
+     * @param array             $config
+     * @param UploadScene|null  $scene 存储场景，缺省 admin（default 分组）
+     *
+     * @return array
+     */
+    private function appendUploadInfo(array $config, ?UploadScene $scene = null): array
+    {
+        $info = UploadFile::runtimeInfo($scene);
+
+        $config['upload_mode']    = $info['mode'];
+        $config['cdn_url']        = $info['cdn_url'];
+        $config['static_url']     = $info['cdn_url'];
+        $config['cdn_url_params'] = $info['cdn_url_params'];
+        // 私有空间（非公开读）：与驱动配置、runtimeInfo() 保持同一 key（is_private）
+        // 前端不能自行拼接，须按资源 key 调 /adminapi/system/files/access-urls 换取地址
+        $config['is_private']     = $info['is_private'];
+        $config['storage_prefix'] = $info['storage_prefix'];
+
+        return $config;
+    }
+
+    /**
      * 获取站点配置
      *
-     * - 租户模式 → 取 platform 分组下的平台配置
+     * - 租户模式（多租户）→ 取 platform 分组下的平台配置
      * - 单体模式 → 取 default 分组下的默认配置
+     *
+     * 站点 Logo 等资源可能存放在「平台公开空间」也可能存放在「租户私有空间」，
+     * 因此必须同时下发与配置来源一致的存储运行时信息（static_url / is_private /
+     * storage_prefix），前端据此拼接域名或换取签名直链。
      *
      * @param array $default 默认值
      * @return array
@@ -75,7 +124,7 @@ class ConfigService extends BaseService
      */
     public function getSiteConfig(array $default = []): array
     {
-        $groupCode = config('tenant.enable', false) ? 'platform' : 'default';
+        $groupCode = config('tenant.enable', false) ? UploadScene::GROUP_PLATFORM : UploadScene::GROUP_DEFAULT;
         $code      = 'site_setting';
 
         $config = $this->dao->getModel()
@@ -86,17 +135,22 @@ class ConfigService extends BaseService
             ->whereNull('tenant_id')
             ->first();
 
+        $scene = UploadScene::fromName($groupCode);
+
         if (!$config) {
-            return $default;
+            return $this->appendUploadInfo($default, $scene);
         }
 
         $content = $config->getRawOriginal('content');
         if (is_string($content) && !empty($content)) {
             $decoded = json_decode($content, true);
-            return json_last_error() === JSON_ERROR_NONE ? $decoded : $content;
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $this->appendUploadInfo($decoded, $scene);
+            }
+            return $content;
         }
 
-        return $content ?? $default;
+        return $content ?? $this->appendUploadInfo($default, $scene);
     }
 
     /**
