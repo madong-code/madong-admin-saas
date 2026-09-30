@@ -6,7 +6,7 @@
         "http service"
     ],
     "homepage": "https://www.workerman.net",
-    "license": "Apache-2.0",
+    "license": "MIT",
     "description": "High performance HTTP Service Framework.",
     "authors": [
         {
@@ -80,7 +80,10 @@
         "symfony/console": "^7.4",
         "madong/swagger": "^2.0",
         "madong/query": "^1.0",
-        "webman/limiter": "^2.2"
+        "webman/limiter": "^2.2",
+        "mcp/sdk": "0.8",
+        "nyholm/psr7": "1.8",
+        "symfony/finder": "7.3"
     },
     "suggest": {
         "ext-event": "For better performance. "
@@ -120,6 +123,9 @@
                 "PKSA-64jn-3d9t-gncx": "phpspreadsheet security advisory, ignore for now"
             },
             "block-insecure": false
+        },
+        "allow-plugins": {
+            "php-http/discovery": true
         }
     },
     "require-dev": {
