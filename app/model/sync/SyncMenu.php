@@ -47,6 +47,7 @@ class SyncMenu extends SyncModel
         'redirect',
         'icon',
         'is_show',
+        'is_tab',
         'is_link',
         'link_url',
         'open_type',

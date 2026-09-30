@@ -49,6 +49,7 @@ class Menu extends BaseModel
         'redirect',
         'icon',
         'is_show',
+        'is_tab',
         'is_link',
         'link_url',
         'open_type',
@@ -106,12 +107,17 @@ class Menu extends BaseModel
             $newData['hideInMenu'] = true;
         }
 
-        // 4.是否缓存
+        // 4.是否隐藏标签页(is_tab=0 不显示在 tags 标签页)
+        if (isset($data['is_tab']) && $data['is_tab'] == 0) {
+            $newData['hideInTab'] = true;
+        }
+
+        // 5.是否缓存
         if (isset($data['is_cache']) && (int)$data['is_cache'] == 1) {
             $newData['keepAlive'] = true;
         }
 
-        //5.是否外链在新窗口打开
+        // 6.是否外链在新窗口打开
         if (isset($data['open_type']) && $data['open_type'] == 1) {
             $newData['link'] = true;
         }

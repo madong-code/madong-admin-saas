@@ -506,6 +506,13 @@ class TenantSyncService extends BaseService
                     'comment'  => '模板ID',
                     'nullable' => false,
                 ],
+                [
+                    'column'   => 'is_tab',
+                    'type'     => 'tinyInteger',
+                    'default'  => 1,
+                    'comment'  => '是否显示在tags标签: 0否 1是',
+                    'nullable' => false,
+                ],
             ],
             'sys_config' => [
                 [

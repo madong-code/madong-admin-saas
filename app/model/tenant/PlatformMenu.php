@@ -31,7 +31,7 @@ class PlatformMenu extends SystemModel
     protected $fillable = [
         'id', 'pid', 'app', 'source', 'title', 'code', 'level',
         'type', 'sort', 'path', 'component', 'redirect', 'icon',
-        'is_show', 'is_link', 'link_url', 'enabled', 'open_type',
+        'is_show', 'is_tab', 'is_link', 'link_url', 'enabled', 'open_type',
         'is_cache', 'is_sync', 'is_affix', 'is_global', 'variable',
         'methods', 'is_frame',
         'created_at', 'created_by', 'updated_at', 'updated_by', 'deleted_at',

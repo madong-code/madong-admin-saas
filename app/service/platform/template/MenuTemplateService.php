@@ -79,6 +79,7 @@ class MenuTemplateService extends BaseService
                     'redirect'    => $menu->redirect ?? '',
                     'icon'        => $menu->icon ?? '',
                     'is_show'     => $menu->is_show ?? 1,
+                    'is_tab'      => $menu->is_tab ?? 1,
                     'is_link'     => $menu->is_link ?? 0,
                     'link_url'    => $menu->link_url ?? '',
                     'enabled'     => $menu->enabled ?? 1,
@@ -171,7 +172,16 @@ class MenuTemplateService extends BaseService
     private function syncToFieldTenants(MenuTemplate $template): void
     {
         try {
-            Menu::where('template_id', $template->id)->update($template->toArray());
+            // 白名单可写字段：排除主键/树形结构与审计字段，
+            // 且过滤掉 toArray() 中的 appends（created_date/updated_date 非真实列），
+            // 否则 Eloquent Builder::update() 会不过滤 fillable 直接把 id/appends 写进 SQL。
+            $writableFields = array_diff(
+                (new Menu())->getFillable(),
+                ['id', 'pid', 'level', 'template_id', 'tenant_id', 'created_at', 'created_by', 'updated_at', 'updated_by', 'deleted_at']
+            );
+            $updateData = array_intersect_key($template->toArray(), array_flip($writableFields));
+
+            Menu::where('template_id', $template->id)->update($updateData);
         } catch (\Throwable $e) {
             Log::error('同步菜单到field模式租户失败', [
                 'template_id' => $template->id,

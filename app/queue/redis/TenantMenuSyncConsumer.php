@@ -65,6 +65,15 @@ class TenantMenuSyncConsumer extends BaseQueueConsumer
         $updateData = $data['data'] ?? [];
         if (empty($updateData)) return;
 
+        // 白名单过滤：入参为原始请求数组，且 Builder::update() 不过滤 fillable，
+        // 需显式排除主键/树形结构与审计字段，避免把 id 等写入 SQL。
+        $writableFields = array_diff(
+            (new SyncMenu())->getFillable(),
+            ['id', 'pid', 'level', 'template_id', 'tenant_id', 'created_at', 'created_by', 'updated_at', 'updated_by', 'deleted_at']
+        );
+        $updateData = array_intersect_key($updateData, array_flip($writableFields));
+        if (empty($updateData)) return;
+
         SyncMenu::on($connectionName)
             ->where('template_id', $templateId)
             ->update($updateData);

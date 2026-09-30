@@ -15,6 +15,7 @@ namespace app\adminapi\listener\system;
 
 use app\adminapi\event\system\MenuFormattingEvent;
 use core\foundation\base\BaseListener;
+use core\foundation\tool\MenuVariableParser;
 use madong\helper\Tree;
 
 /**
@@ -71,11 +72,13 @@ class MenuFormattingListener extends BaseListener
                 'query'         => null,           // 预留字段：路由参数
             ];
 
-            // 徽章配置（直接放在根级别，前端组件直接读取）
-            if (!empty($item->show_text_badge)) {
-                $result['badge']         = $item->show_text_badge;
-                $result['badgeType']     = 'normal';
-                $result['badgeVariants'] = 'default';
+            // 徽章配置来自 menu.variable 根级的 badge 域（未配置则不下发任何徽标字段）
+            // 输出 snake_case，位置在根级，前端组件直接读取
+            $badge = MenuVariableParser::badge($item->variable ?? '');
+            if ($badge !== null) {
+                $result['badge']          = $badge['badge'];
+                $result['badge_type']     = $badge['badge_type'];
+                $result['badge_variants'] = $badge['badge_variants'];
             }
 
             // meta 字段（用于路由配置）
@@ -86,12 +89,12 @@ class MenuFormattingListener extends BaseListener
                 'order'           => $item->sort ?? 0,
 
                 // 显示控制
-                'hideInMenu'      => !$item->is_show ?? false,
-                'hideInTab'       => $item->is_hide_tab ?? false,
+                'hideInMenu'      => !($item->is_show ?? true),
+                'hideInTab'       => !($item->is_tab ?? true),         // is_tab=0 → 隐藏标签页
                 'affixTab'        => $item->is_affix ?? false, // 固定标签页
 
                 // 权限控制
-                'authority'       => $item->variable ? explode(',', $item->variable) : [],
+                'authority'       => MenuVariableParser::authority($item->variable ?? ''),
 
                 // 功能控制
                 'keepAlive'       => $item->is_cache ?? false, // 缓存
