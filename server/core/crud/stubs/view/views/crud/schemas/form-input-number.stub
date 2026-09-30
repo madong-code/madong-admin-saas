@@ -1,9 +1,0 @@
-{
-      fieldName: '{FORM_FIELD}',
-      label: '{FORM_LABEL}',
-      component: 'InputNumber',
-      componentProps: {
-        allowClear: true,
-      },
-      formItemClass: 'col-span-12',
-},

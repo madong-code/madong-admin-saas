@@ -1,9 +1,0 @@
-    /**
-     * {%NAME%}一对一关联
-     * @date {%DATE%}
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
-     */
-    public function {%FIELD%}HasOne(): \Illuminate\Database\Eloquent\Relations\HasOne
-    {
-        return $this->hasOne({%CLASS%}, '{%FOREIGN_KEY%}', '{%LOCAL_KEY%}');
-    }

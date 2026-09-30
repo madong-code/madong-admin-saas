@@ -1,1 +1,0 @@
-Route::delete('{%ROUTE%}/{id}', [\app\admin\controller\crud\.{%NAME_CAMEL%}:class','destroy'])->name('{%MENUS%}删除接口');

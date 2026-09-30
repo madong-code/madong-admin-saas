@@ -1,4 +1,0 @@
-
-export const list = (params?: Record<string, any>) => {
-  return requestClient.get(baseUrl, { params });
-}

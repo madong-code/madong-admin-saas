@@ -1,4 +1,0 @@
-
-export const update = (id: string | number, data: Record<string, any>) => {
-  return requestClient.put(`${baseUrl}/${id}`, data);
-}
