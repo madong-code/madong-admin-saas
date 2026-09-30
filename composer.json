@@ -6,7 +6,7 @@
         "http service"
     ],
     "homepage": "https://www.workerman.net",
-    "license": "MIT",
+    "license": "Apache-2.0",
     "description": "High performance HTTP Service Framework.",
     "authors": [
         {

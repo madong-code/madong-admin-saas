@@ -80,4 +80,4 @@ madong/                       # 项目根目录
 
 ## 开源协议
 
-[MIT](LICENSE)
+[Apache-2.0](LICENSE)
