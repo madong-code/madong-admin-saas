@@ -1,0 +1,49 @@
+<?php
+declare(strict_types=1);
+/**
+ *+------------------
+ * madong
+ *+------------------
+ * Copyright (c) https://gitee.com/motion-code  All rights reserved.
+ *+------------------
+ * Author: Mr. April (405784684@qq.com)
+ *+------------------
+ * Official Website: https://madong.tech
+ */
+
+namespace {namespace};
+
+use core\foundation\base\BaseModel;
+{soft_delete_use}
+
+/**
+ * {class_name}模型
+ *
+ * @author Mr.April
+ * @since  1.0
+ */
+class {class_name} extends BaseModel
+{
+    {soft_delete_trait}
+
+    protected $table = '{table_name}';
+
+    /**
+     * 指示是否自动维护时间戳
+     *
+     * @var bool
+     */
+    public $timestamps = true;
+
+    {soft_delete}
+
+    protected $appends = ['created_date', 'updated_date'];
+
+    protected $fillable = [
+{fillable_fields}
+    ];
+
+    {searchers}
+
+    {relations}
+}

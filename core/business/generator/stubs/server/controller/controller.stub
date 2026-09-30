@@ -1,0 +1,215 @@
+<?php
+declare(strict_types=1);
+/**
+ *+------------------
+ * madong
+ *+------------------
+ * Copyright (c) https://gitee.com/motion-code  All rights reserved.
+ *+------------------
+ * Author: Mr. April (405784684@qq.com)
+ *+------------------
+ * Official Website: https://madong.tech
+ */
+
+namespace {namespace};
+
+use app\adminapi\controller\Crud;
+use app\schema\request\BatchDeleteRequest;
+use {schema_request_namespace}\{class_name}FormRequest as {class_name}FormRequest;
+use {schema_request_namespace}\{class_name}QueryRequest as {class_name}QueryRequest;
+use app\adminapi\middleware\AccessTokenMiddleware;
+use app\adminapi\middleware\OperationMiddleware;
+use app\adminapi\middleware\PermissionMiddleware;
+use {validate_namespace}\{class_name}Validate as {class_name}Validate;
+use {schema_response_namespace}\{class_name}Response as {class_name}Response;
+use app\schema\request\IdRequest;
+use {service_namespace}\{class_name}Service as {class_name}Service;
+use core\foundation\exception\handler\AdminException;
+use core\foundation\tool\Json;
+use madong\swagger\annotation\response\DataResponse;
+use madong\swagger\annotation\response\PageResponse;
+use madong\swagger\annotation\response\SimpleResponse;
+use madong\swagger\attribute\Permission;
+use OpenApi\Attributes as OA;
+use support\annotation\Middleware;
+use support\Request;
+use WebmanTech\Swagger\DTO\SchemaConstants;
+
+#[Middleware(AccessTokenMiddleware::class, PermissionMiddleware::class, OperationMiddleware::class)]
+#[OA\Tag(name: '{class_name}管理')]
+final class {class_name}Controller extends Crud
+{
+    public function __construct({class_name}Service $service, {class_name}Validate $validate)
+    {
+        $this->service  = $service;
+        $this->validate = $validate;
+    }
+
+    #[OA\Get(
+        path: '/{package_name_dash}/{class_name_dash}',
+        summary: '列表',
+        tags: ['{class_name}'],
+        x: [
+            SchemaConstants::X_SCHEMA_REQUEST => {class_name}QueryRequest::class,
+        ]
+    )]
+    #[Permission(code: '{package_name_lower}:{class_name_lower}:list')]
+    #[PageResponse(schema:{class_name}Response::class,example:[])]
+    public function index(Request $request): \support\Response
+    {
+        return parent::index($request);
+    }
+
+    #[OA\Get(
+        path: '/{package_name_dash}/{class_name_dash}/{id}',
+        summary: '详情',
+        tags: ['{class_name}'],
+        x: [
+            SchemaConstants::X_PROPERTY_IN => 'id',
+            SchemaConstants::X_SCHEMA_REQUEST => IdRequest::class,
+        ]
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        description: '{class_name}ID',
+        in: 'path',
+        required: true,
+        schema: new OA\Schema(type: 'string', example: 1)
+    )]
+    #[Permission(code: '{package_name_lower}:{class_name_lower}:read')]
+    #[DataResponse(schema: {class_name}Response::class,example:[])]
+    public function show(Request $request): \support\Response
+    {
+        try {
+            $id   = $request->route->param('id');
+            $data = $this->service->get($id);
+            if (empty($data)) {
+                throw new AdminException('数据未找到', 400);
+            }
+
+            $dataArray = $data->toArray();
+            return Json::success('ok', $dataArray);
+        } catch (\Throwable $e) {
+            return Json::fail($e->getMessage(), [], $e->getCode());
+        }
+    }
+
+    #[OA\Post(
+        path: '/{package_name_dash}/{class_name_dash}',
+        summary: '添加',
+        tags: ['{class_name}'],
+        x: [
+            SchemaConstants::X_SCHEMA_REQUEST => {class_name}FormRequest::class,
+        ]
+    )]
+    #[Permission(code: '{package_name_lower}:{class_name_lower}:create')]
+    #[SimpleResponse(schema: [], example: [])]
+    public function store(Request $request): \support\Response
+    {
+        try {
+            $data = $request->all();
+
+            if (isset($this->validate) && $this->validate) {
+                if (!$this->validate->scene('store')->check($data)) {
+                    throw new \Exception($this->validate->getError());
+                }
+            }
+            $model = $this->service->save($data);
+            if (empty($model)) {
+                throw new AdminException('插入失败');
+            }
+            $pk = $model->getPk();
+            return Json::success('ok', [$pk => $model->getData($pk)]);
+        } catch (\Throwable $e) {
+            return Json::fail($e->getMessage());
+        }
+    }
+
+    #[OA\Put(
+        path: '/{package_name_dash}/{class_name_dash}/{id}',
+        summary: '更新',
+        tags: ['{class_name}'],
+        x: [
+            SchemaConstants::X_SCHEMA_REQUEST => {class_name}FormRequest::class,
+        ]
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        description: '{class_name}ID',
+        in: 'path',
+        required: true,
+        schema: new OA\Schema(type: 'string', example: 1)
+    )]
+    #[Permission(code: '{package_name_lower}:{class_name_lower}:update')]
+    #[SimpleResponse(schema: [], example: [])]
+    public function update(Request $request): \support\Response
+    {
+        try {
+            $id   = $request->route->param('id');
+            $data = $request->all();
+            if (isset($this->validate) && $this->validate) {
+                if (!$this->validate->scene('update')->check($data)) {
+                    throw new \Exception($this->validate->getError());
+                }
+            }
+            $this->service->update($id, $data);
+            return Json::success('ok', []);
+        } catch (\Throwable $e) {
+            return Json::fail($e->getMessage());
+        }
+    }
+
+    #[OA\Delete(
+        path: '/{package_name_dash}/{class_name_dash}/{id}',
+        summary: '删除',
+        tags: ['{class_name}'],
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        description: '{class_name}ID',
+        in: 'path',
+        required: true,
+        schema: new OA\Schema(type: 'string', example: 1)
+    )]
+    #[Permission(code: '{package_name_lower}:{class_name_lower}:delete')]
+    #[SimpleResponse(schema: [], example: [])]
+    public function destroy(Request $request): \support\Response
+    {
+        try {
+            $id   = $request->route->param('id');
+            $data = $request->input('data', []);
+            $data = !empty($id) && $id !== '0' ? $id : $data;
+            if (empty($data)) {
+                throw new AdminException('参数错误');
+            }
+            $this->service->destroy($data);
+            return Json::success('操作成功');
+        } catch (\Exception $e) {
+            return Json::fail($e->getMessage(), [], $e->getCode());
+        }
+    }
+
+    #[OA\Delete(
+        path: '/{package_name_dash}/{class_name_dash}',
+        summary: '批量删除',
+        tags: ['{class_name}'],
+        x: [
+            SchemaConstants::X_SCHEMA_REQUEST => BatchDeleteRequest::class,
+        ]
+    )]
+    #[Permission(code: '{package_name_lower}:{class_name_lower}:delete')]
+    #[SimpleResponse(schema: [], example: [])]
+    public function batchDelete(Request $request): \support\Response
+    {
+        try {
+            $data = $request->input('ids', []);
+            if (empty($data)) {
+                throw new AdminException('参数错误');
+            }
+            $this->service->destroy($data);
+            return Json::success('操作成功');
+        } catch (\Exception $e) {
+            return Json::fail($e->getMessage(), [], $e->getCode());
+        }
+    }
+}

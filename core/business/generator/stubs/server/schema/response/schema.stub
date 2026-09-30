@@ -1,0 +1,27 @@
+<?php
+declare(strict_types=1);
+/**
+ *+------------------
+ * madong
+ *+------------------
+ * Copyright (c) https://gitee.com/motion-code  All rights reserved.
+ *+------------------
+ * Author: Mr. April (405784684@qq.com)
+ *+------------------
+ * Official Website: https://madong.tech
+ */
+
+namespace {namespace};
+
+use OpenApi\Attributes as OA;
+use madong\swagger\schema\BaseResponseDTO;
+
+
+#[OA\Schema(
+    title: '{class_name}详情响应模型',
+    description: '{class_name}详情接口的返回数据结构'
+)]
+class {class_name}Response extends BaseResponseDTO
+{
+    {fields}
+}

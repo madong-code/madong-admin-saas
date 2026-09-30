@@ -1,0 +1,27 @@
+<?php
+declare(strict_types=1);
+/**
+ *+------------------
+ * madong
+ *+------------------
+ * Copyright (c) https://gitee.com/motion-code  All rights reserved.
+ *+------------------
+ * Author: Mr. April (405784684@qq.com)
+ *+------------------
+ * Official Website: https://madong.tech
+ */
+
+namespace {namespace};
+
+use OpenApi\Attributes as OA;
+use app\schema\request\BaseFormRequest;
+use WebmanTech\DTO\Attributes\ValidationRules;
+
+#[OA\Schema(
+    title: '{class_name}表单',
+    description: '{class_name}创建和编辑接口共用的表单请求参数'
+)]
+class {class_name}FormRequest extends BaseFormRequest
+{
+    {fields}
+}

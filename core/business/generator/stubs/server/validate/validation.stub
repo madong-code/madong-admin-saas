@@ -1,0 +1,64 @@
+<?php
+declare(strict_types=1);
+/**
+ *+------------------
+ * madong
+ *+------------------
+ * Copyright (c) https://gitee.com/motion-code  All rights reserved.
+ *+------------------
+ * Author: Mr. April (405784684@qq.com)
+ *+------------------
+ * Official Website: https://madong.tech
+ */
+
+namespace {namespace};
+
+use core\foundation\base\BaseValidate;
+
+/**
+ * {class_name}验证器
+ *
+ * @author Mr.April
+ * @since  1.0
+ */
+class {class_name}Validate extends BaseValidate
+{
+    /**
+     * 场景
+     *
+     * @var array
+     */
+    protected array $scenes = [
+        'store' => [
+            {store_fields}
+        ],
+        'update' => [
+            'id',
+            {update_fields}
+        ],
+    ];
+
+    /**
+     * 验证规则
+     *
+     * @return array
+     */
+    public function rules(): array
+    {
+        return [
+            {rules}
+        ];
+    }
+
+    /**
+     * 错误信息
+     *
+     * @return array
+     */
+    public function message(): array
+    {
+        return [
+            {messages}
+        ];
+    }
+}

@@ -1,0 +1,27 @@
+<?php
+declare(strict_types=1);
+/**
+ *+------------------
+ * madong
+ *+------------------
+ * Copyright (c) https://gitee.com/motion-code  All rights reserved.
+ *+------------------
+ * Author: Mr. April (405784684@qq.com)
+ *+------------------
+ * Official Website: https://madong.tech
+ */
+
+namespace {namespace};
+
+use app\schema\request\BaseQueryRequest;
+use WebmanTech\DTO\Attributes\ValidationRules;
+
+#[OA\Schema(
+    title: '{class_name}查询',
+    description: '{class_name}列表查询接口的请求参数'
+)]
+class {class_name}QueryRequest extends BaseQueryRequest
+{
+
+    {fields}
+}
