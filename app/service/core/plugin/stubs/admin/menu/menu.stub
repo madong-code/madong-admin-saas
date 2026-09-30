@@ -1,0 +1,23 @@
+<?php
+
+/**
+ * 后台菜单配置
+ * 安装时会自动加载
+ */
+
+return [
+    [
+        'name'      => '{{pluginTitle}}',
+        'code'      => '{{kebabPluginKey}}',
+        'path'      => '/{{kebabPluginKey}}',
+        'icon'      => 'plugin',
+        'children'  => [
+            [
+                'name'  => '列表',
+                'code'  => '{{kebabPluginKey}}:index',
+                'path'  => '/{{kebabPluginKey}}/index',
+                'component' => '/{{kebabPluginKey}}/index/index',
+            ],
+        ],
+    ],
+];

@@ -1,0 +1,9 @@
+<?php
+
+return [
+    /*
+     * 审核配置
+     * 用于定义数据审核流程中的字段映射规则
+     * 更多参考: backend/plugin/example/config/review.php
+     */
+];

@@ -1,0 +1,8 @@
+{
+  "title": "{{pluginTitle}}",
+  "name": "名称",
+  "status": "状态",
+  "sort": "排序",
+  "remark": "备注",
+  "created_at": "创建时间"
+}

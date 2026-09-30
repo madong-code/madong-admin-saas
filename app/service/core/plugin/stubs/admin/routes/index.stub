@@ -1,0 +1,15 @@
+import { $t } from '#/locales';
+
+export default [
+  {
+    path: '/{{pluginKey}}/index',
+    name: '{{camelPluginName}}Index',
+    component: 'test/index',
+    meta: {
+      title: $t('{{pluginKey}}.test.title'),
+      icon: 'lucide:plugin',
+      order: 1,
+      module: '{{pluginKey}}',
+    },
+  },
+];

@@ -1,0 +1,74 @@
+import { $t } from '#/locales';
+import type { CrudSchema } from '#/components/crud/components/types';
+import { {{camelPluginName}}Service } from '#/plugin/{{pluginKey}}/api/test';
+
+export function useCrudSchema(): CrudSchema {
+  return {
+    crudApi: {
+      list: {{camelPluginName}}Service.getList,
+      add: {{camelPluginName}}Service.createItem,
+      edit: {{camelPluginName}}Service.updateItem,
+      remove: {{camelPluginName}}Service.deleteItem,
+      batchRemove: {{camelPluginName}}Service.deleteItem,
+      view: {{camelPluginName}}Service.getDetail,
+    },
+    hasAdd: true,
+    hasEdit: true,
+    hasView: true,
+    hasRemove: true,
+    hasBatchRemove: true,
+    permissions: {
+      add: '{{pluginKey}}:create',
+      edit: '{{pluginKey}}:update',
+      remove: '{{pluginKey}}:delete',
+      view: '{{pluginKey}}:read',
+    },
+    columns: [
+      { type: 'checkbox', width: 60 },
+      { field: 'id', title: 'ID', width: 80, visible: false },
+      { field: 'name', title: $t('{{pluginKey}}.test.name'), minWidth: 150 },
+      { field: 'status', title: $t('{{pluginKey}}.test.status'), width: 100,
+        cellRender: { name: 'CellDictTag', attrs: { code: 'sys_enabled_status' } } },
+      { field: 'sort', title: $t('{{pluginKey}}.test.sort'), width: 80 },
+      { field: 'remark', title: $t('{{pluginKey}}.test.remark'), minWidth: 200,
+        showOverflowTooltip: true },
+      { field: 'created_at', title: $t('{{pluginKey}}.test.created_at'), width: 180 },
+    ],
+    searchForm: {
+      enabled: true,
+      collapsed: true,
+      collapsedRows: 2,
+      submitOnChange: true,
+      schema: [
+        { component: 'Input', fieldName: 'LIKE_name',
+          label: $t('{{pluginKey}}.test.name'),
+          componentProps: { clearable: true, placeholder: ' ' } },
+        { component: 'ApiDict', fieldName: 'EQ_status',
+          label: $t('{{pluginKey}}.test.status'),
+          componentProps: { code: 'sys_enabled_status', clearable: true } },
+      ],
+    },
+    formDialog: {
+      enabled: true,
+      title: '{{pluginTitle}}',
+      width: 'w-[50%]',
+      dialogType: 'drawer',
+      wrapperClass: 'grid-cols-2',
+      commonConfig: { labelWidth: 100, labelAlign: 'right' },
+      schema: [
+        { fieldName: 'id', label: 'ID', component: 'Input',
+          dependencies: { triggerFields: ['id'], show: false } },
+        { fieldName: 'name', label: $t('{{pluginKey}}.test.name'),
+          component: 'Input', rules: 'required', formItemClass: 'col-span-1' },
+        { fieldName: 'status', label: $t('{{pluginKey}}.test.status'),
+          component: 'ApiDict', defaultValue: 1,
+          componentProps: { code: 'sys_enabled_status', renderType: 'RadioGroup', isBtn: true } },
+        { fieldName: 'sort', label: $t('{{pluginKey}}.test.sort'),
+          component: 'InputNumber', defaultValue: 0,
+          componentProps: { min: 0, max: 99999 } },
+        { fieldName: 'remark', label: $t('{{pluginKey}}.test.remark'),
+          component: 'Textarea', formItemClass: 'col-span-2' },
+      ],
+    },
+  };
+}

@@ -1,0 +1,7 @@
+import { MOCK_TABLE_DATA } from './table-data';
+
+export function getTableListApi(params: Record<string, any>) {
+  const { page = 1, pageSize = 20 } = params;
+  const items = MOCK_TABLE_DATA.slice((page - 1) * pageSize, page * pageSize);
+  return Promise.resolve({ items, total: MOCK_TABLE_DATA.length });
+}

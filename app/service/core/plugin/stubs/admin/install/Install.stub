@@ -1,0 +1,55 @@
+<?php
+/**
+ *+------------------
+ * madong
+ *+------------------
+ * Copyright (c) https://gitee.com/motion-code  All rights reserved.
+ *+------------------
+ * Author: Mr. April (405784684@qq.com)
+ *+------------------
+ * Official Website: http://www.madong.tech
+ */
+
+namespace plugin\{{pluginKey}};
+
+
+use core\business\plugin\PluginInstall as BasePluginInstall;
+
+/**
+ * 插件安装类
+ * 继承 PluginInstall 基类，自动处理：
+ * - 数据库迁移 (resource/database/migrations/)
+ * - 种子数据 (resource/database/seeds/)
+ *
+ * 菜单和模板需要按需导入，在 afterInstall/afterUninstall 中调用：
+ * - $this->importPluginMenus()      - 导入菜单
+ * - $this->importTemplates()        - 复制模板
+ * - $this->uninstallPluginMenus()   - 卸载菜单
+ * - $this->deletePluginTemplates()  - 删除模板
+ */
+final class Install extends BasePluginInstall
+{
+    protected function beforeInstall(string $version): void
+    {
+        $this->output("  Running beforeInstall...\n");
+    }
+
+    protected function afterInstall(string $version): void
+    {
+        $this->output("  Running afterInstall...\n");
+        $this->importPluginMenus();
+        $this->importTemplates();
+    }
+
+    protected function beforeUninstall(string $version): void
+    {
+        $this->output("  Running beforeUninstall...\n");
+    }
+
+    protected function afterUninstall(string $version): void
+    {
+        $this->output("  Running afterUninstall...\n");
+        $this->uninstallPluginMenus();
+        $this->deletePluginTemplates();
+    }
+}

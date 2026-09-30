@@ -1,0 +1,13 @@
+<?php
+
+return [
+    'enable'            => true,
+    'debug'             => true,
+    'controller_suffix' => 'Controller',
+    'controller_reuse'  => false,
+    'version'           => '{{pluginVersion}}',
+    'title'             => '{{pluginTitle}}',
+    'description'       => '{{pluginDesc}}',
+    'author'            => '{{pluginAuthor}}',
+    'type'              => 'madong:app',
+];

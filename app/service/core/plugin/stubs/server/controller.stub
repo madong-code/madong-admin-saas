@@ -1,0 +1,82 @@
+<?php
+/**
+ * {{camelPluginName}} 控制器
+ */
+
+namespace plugin\{{pluginName}}\app\adminapi\controller;
+
+use app\adminapi\middleware\OperationMiddleware;
+use app\adminapi\middleware\PermissionMiddleware;
+use core\foundation\tool\Json;
+use madong\swagger\annotation\response\DataResponse;
+use madong\swagger\annotation\response\SimpleResponse;
+use madong\swagger\attribute\Permission;
+use madong\swagger\attribute\AllowAnonymous;
+use OpenApi\Attributes as OA;
+use support\annotation\Middleware;
+use support\Request;
+use support\Response;
+
+#[Middleware(OperationMiddleware::class, PermissionMiddleware::class)]
+final class {{camelPluginName}}Controller
+{
+    #[OA\Get(
+        path: '/{{pluginKey}}/index',
+        summary: '获取列表',
+        tags: ['{{pluginName}}']
+    )]
+    #[DataResponse(description: '获取成功')]
+    #[Permission(code: '{{pluginName}}:index', description: '列表权限')]
+    public function index(Request $request): Response
+    {
+        return Json::success('获取成功', []);
+    }
+
+    #[OA\Post(
+        path: '/{{pluginKey}}/create',
+        summary: '创建',
+        tags: ['{{pluginName}}']
+    )]
+    #[SimpleResponse(description: '创建成功')]
+    #[Permission(code: '{{pluginName}}:create', description: '创建权限')]
+    public function create(Request $request): Response
+    {
+        return Json::success('创建成功');
+    }
+
+    #[OA\Get(
+        path: '/{{pluginKey}}/info',
+        summary: '详情',
+        tags: ['{{pluginName}}']
+    )]
+    #[DataResponse(description: '获取成功')]
+    #[Permission(code: '{{pluginName}}:info', description: '详情权限')]
+    public function info(Request $request): Response
+    {
+        return Json::success('获取成功', []);
+    }
+
+    #[OA\Post(
+        path: '/{{pluginKey}}/update',
+        summary: '更新',
+        tags: ['{{pluginName}}']
+    )]
+    #[SimpleResponse(description: '更新成功')]
+    #[Permission(code: '{{pluginName}}:update', description: '更新权限')]
+    public function update(Request $request): Response
+    {
+        return Json::success('更新成功');
+    }
+
+    #[OA\Post(
+        path: '/{{pluginKey}}/delete',
+        summary: '删除',
+        tags: ['{{pluginName}}']
+    )]
+    #[SimpleResponse(description: '删除成功')]
+    #[Permission(code: '{{pluginName}}:delete', description: '删除权限')]
+    public function delete(Request $request): Response
+    {
+        return Json::success('删除成功');
+    }
+}
