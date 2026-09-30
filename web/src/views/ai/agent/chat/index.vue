@@ -473,7 +473,7 @@ const handleSettingsSave = () => {
 </template>
 
 <style scoped lang="less">
-/deep/ .ant-list-item {
+:deep(.ant-list-item) {
   border-block-end: 0 !important;
 }
 .chat-layout {
