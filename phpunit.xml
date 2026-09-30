@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/Bootstrap.php"
+         colors="true"
+         stopOnFailure="false"
+         cacheResult="false">
+    
+    <testsuites>
+        <testsuite name="SaaS Test Suite">
+            <directory suffix=".php">tests/saas</directory>
+            <directory suffix=".php">tests/integration</directory>
+        </testsuite>
+    </testsuites>
+    
+    <coverage>
+        <include>
+            <directory suffix=".php">app</directory>
+            <directory suffix=".php">core</directory>
+        </include>
+        <exclude>
+            <directory suffix=".php">app/exception</directory>
+        </exclude>
+    </coverage>
+    
+    <php>
+        <env name="APP_DEBUG" value="true"/>
+        <env name="TESTING" value="true"/>
+        <ini name="display_errors" value="1"/>
+        <ini name="error_reporting" value="-1"/>
+    </php>
+</phpunit>
