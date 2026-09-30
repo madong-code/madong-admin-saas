@@ -48,12 +48,12 @@ class DownloadCommand extends BaseCommand
     private array $templateConfigs = [
         'mono' => [
             'name'     => 'Monorepo',
-            'git_url'  => 'https://gitee.com/motion-code/madong-mono-vue.git',
+            'git_url'  => 'https://gitee.com/motion-code/madong-mono.git',
             'dir_name' => 'template' . DIRECTORY_SEPARATOR . 'mono',
         ],
         'web' => [
             'name'     => 'Web 前台',
-            'git_url'  => 'https://gitee.com/motion-code/madong-saas-nuxt.git',
+            'git_url'  => 'https://gitee.com/motion-code/web-nuxt.git',
             'dir_name' => 'template' . DIRECTORY_SEPARATOR . 'web',
         ],
         'skills' => [
