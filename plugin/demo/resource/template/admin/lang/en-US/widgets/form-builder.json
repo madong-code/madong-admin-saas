@@ -1,0 +1,8 @@
+{
+  "title": "Form Builder",
+  "desc": "Visual form design - edit JSON schema with live preview",
+  "designer": "Form Designer",
+  "edit_json": "Edit JSON",
+  "hide_json": "Hide JSON",
+  "reset": "Reset"
+}

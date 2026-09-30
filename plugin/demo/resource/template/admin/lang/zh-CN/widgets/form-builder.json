@@ -1,0 +1,8 @@
+{
+  "title": "表单设计",
+  "desc": "可视化表单设计 - 编辑 JSON Schema 实时预览",
+  "designer": "表单设计器",
+  "edit_json": "编辑 JSON",
+  "hide_json": "隐藏 JSON",
+  "reset": "重置"
+}

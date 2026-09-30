@@ -1,0 +1,5 @@
+{
+  "title": "测试插件",
+  "pluginDescription": "这是一个纯前端测试示例插件，包含 Pinia 状态管理、Element Plus 组件与国际化支持。",
+  "usageGuide": "使用指引"
+}

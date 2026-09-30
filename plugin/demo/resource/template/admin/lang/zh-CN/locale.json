@@ -1,0 +1,19 @@
+{
+  "title": "多语言示例",
+  "test": {
+    "description": "测试插件语言包是否正确加载",
+    "plugin_locale_test": "插件语言包测试",
+    "framework_locale_test": "框架语言包测试",
+    "current_locale": "当前语言设置",
+    "switch_language": "切换语言",
+    "chinese": "中文",
+    "english": "英文",
+    "greeting": "你好！欢迎使用插件语言包测试",
+    "welcome": "欢迎来到后端模式路由测试",
+    "menu_home": "菜单-首页",
+    "menu_settings": "菜单-设置",
+    "common_confirm": "通用-确认",
+    "common_cancel": "通用-取消",
+    "current_lang": "当前语言"
+  }
+}

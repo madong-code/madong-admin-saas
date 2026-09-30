@@ -1,0 +1,17 @@
+{
+  "title": "图片选择器",
+  "desc": "图片选择器组件示例，展示单选、多选、大尺寸与禁用状态等用法。",
+  "single_mode": "单选模式",
+  "multiple_mode": "多选模式",
+  "large_single": "大尺寸单选（带默认值）",
+  "disabled": "禁用状态",
+  "code_example": "代码示例",
+  "single": "单选",
+  "multiple": "多选",
+  "large": "大尺寸",
+  "selected": "已选择",
+  "not_selected": "未选择",
+  "count": "张",
+  "search": "搜索",
+  "disabled_tip": "禁用状态下的组件不可点击"
+}

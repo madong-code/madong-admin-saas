@@ -1,0 +1,5 @@
+{
+  "title": "Test Plugin",
+  "pluginDescription": "A pure front-end test plugin example with Pinia state management, Element Plus components and i18n support.",
+  "usageGuide": "Usage Guide"
+}

@@ -1,0 +1,10 @@
+{
+  "currentCount": "Current Count",
+  "doubleCount": "Double Count",
+  "messageCount": "Message Count",
+  "loading": "Loading...",
+  "asyncIncrement": "Async +10",
+  "activityLog": "Activity Log",
+  "noActivity": "No activity yet",
+  "clearAll": "Clear All"
+}
