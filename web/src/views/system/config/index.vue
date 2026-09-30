@@ -48,8 +48,7 @@ const settingList = ref([
 .custom-tabs {
   min-height: 500px;
 }
-
-.custom-tabs >>> .ant-tabs-nav {
+:deep(.custom-tabs .ant-tabs-nav) {
   width: 220px; /* 设置左侧选项卡的宽度 */
 }
 </style>
