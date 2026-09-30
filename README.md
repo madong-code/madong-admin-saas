@@ -37,17 +37,16 @@ cd madong/backend
 # 2. 安装依赖
 composer install
 
-# 3. 配置环境
-cp .example.env .env    # 修改数据库 / Redis 等配置
-
-# 4. 初始化数据库（Phinx 迁移）
-php webman phinx:migrate
-
-# 5. 启动
+# 3. 启动服务（需提前准备好 MySQL 与 Redis）
 # Windows
 php windows.php
 # Linux / macOS
 php start.php start -d
+
+# 4. 可视化安装
+# 浏览器访问 http://127.0.0.1:8500 进入安装向导，
+# 按页面提示填写数据库 / Redis 连接信息与管理员账号，
+# 系统将自动生成 .env 并完成数据表初始化
 ```
 
 前端（管理端）克隆至同级目录 `madong/template`，部署请参考 [madong-multi](https://gitee.com/motion-code/madong-multi) 仓库说明；容器化部署请参考 [docker-webman](https://gitee.com/motion-code/docker-webman)。
