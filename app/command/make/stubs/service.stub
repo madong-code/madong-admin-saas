@@ -1,0 +1,34 @@
+<?php
+declare(strict_types=1);
+/**
+ *+------------------
+ * madong
+ *+------------------
+ * Copyright (c) https://gitee.com/motion-code  All rights reserved.
+ *+------------------
+ * Author: Mr. April (405784684@qq.com)
+ *+------------------
+ * Official Website: https://madong.tech
+ */
+
+namespace DummyNamespace;
+
+use app\dao\DummyDao;
+use core\found\base\BaseService;
+
+/**
+ * DummyClass服务类
+ *
+ * @author Mr.April
+ * @since  1.0
+ */
+class DummyClass extends BaseService
+{
+    /**
+     * 构造方法
+     */
+    public function __construct(DummyDao \$dao)
+    {
+        \$this->dao = \$dao;
+    }
+}
