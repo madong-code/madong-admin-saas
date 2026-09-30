@@ -41,6 +41,7 @@ class Category extends BaseModel
         'path',
         'is_show',
         'is_system',
+        'source',
         'enabled',
         'tenant_id',
         'created_at',

@@ -26,6 +26,7 @@ class DefinitionRel extends BasePivot
     protected $fillable = [
         'definition_id',
         'template_id',
+        'tenant_id',
     ];
 
     protected $casts = [

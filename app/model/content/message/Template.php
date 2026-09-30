@@ -33,6 +33,7 @@ class Template extends BaseModel
     protected $fillable = [
         'id',
         'type',
+        'key',
         'template_id',
         'title',
         'content_template',
@@ -45,6 +46,7 @@ class Template extends BaseModel
         'push_rule',
         'minute',
         'is_system',
+        'source',
         'tenant_id',
         'created_at',
         'updated_at',

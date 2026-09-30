@@ -37,6 +37,7 @@ class Definition extends BaseModel
         'nav_value',
         'sort',
         'is_system',
+        'source',
         'enabled',
         'tenant_id',
         'created_at',
