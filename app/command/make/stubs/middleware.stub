@@ -1,0 +1,38 @@
+<?php
+declare(strict_types=1);
+/**
+ *+------------------
+ * madong
+ *+------------------
+ * Copyright (c) https://gitee.com/motion-code  All rights reserved.
+ *+------------------
+ * Author: Mr. April (405784684@qq.com)
+ *+------------------
+ * Official Website: https://madong.tech
+ */
+
+namespace DummyNamespace;
+
+use Webman\Http\Request;
+use Webman\Http\Response;
+use Webman\MiddlewareInterface;
+
+/**
+ * DummyClass中间件
+ *
+ * @author Mr.April
+ * @since  1.0
+ */
+class DummyClass implements MiddlewareInterface
+{
+    /**
+     * 处理请求
+     */
+    public function process(Request \$request, callable \$handler): Response
+    {
+        // 前置中间件逻辑
+        \$response = \$handler(\$request);
+        // 后置中间件逻辑
+        return \$response;
+    }
+}

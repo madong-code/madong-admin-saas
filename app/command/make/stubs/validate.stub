@@ -1,0 +1,58 @@
+<?php
+declare(strict_types=1);
+/**
+ *+------------------
+ * madong
+ *+------------------
+ * Copyright (c) https://gitee.com/motion-code  All rights reserved.
+ *+------------------
+ * Author: Mr. April (405784684@qq.com)
+ *+------------------
+ * Official Website: https://madong.tech
+ */
+
+namespace DummyNamespace;
+
+use core\found\base\BaseValidate;
+
+/**
+ * DummyClass验证器
+ *
+ * @author Mr.April
+ * @since  1.0
+ */
+class DummyClass extends BaseValidate
+{
+    /**
+     * 定义验证规则
+     */
+    protected array \$rule = [
+        // 示例规则
+        // 'name' => 'require|max:50',
+        // 'code' => 'require|alphaDash',
+        // 'enabled' => 'require',
+    ];
+
+    /**
+     * 定义错误信息
+     */
+    protected array \$messages = [
+        // 示例错误信息
+        // 'name.require' => '名称必须填写',
+        // 'name.max' => '名称最多50个字符',
+        // 'code.require' => '标识必须填写',
+        // 'code.alphaDash' => '标识只能由英文字母组成',
+    ];
+
+    /**
+     * 定义场景
+     */
+    protected array \$scenes = [
+        'store' => [
+            // 创建时验证的字段
+        ],
+        'update' => [
+            // 更新时验证的字段
+        ],
+    ];
+}

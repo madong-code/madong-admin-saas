@@ -1,0 +1,8 @@
+{
+  "title": "{{pluginTitle}}",
+  "name": "Name",
+  "status": "Status",
+  "sort": "Sort",
+  "remark": "Remark",
+  "created_at": "Created At"
+}

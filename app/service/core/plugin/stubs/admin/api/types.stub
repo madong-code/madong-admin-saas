@@ -1,0 +1,14 @@
+/**
+ * {{pluginName}} 插件 API 类型定义
+ */
+
+/** {{pluginTitle}} 记录 */
+export interface {{camelPluginName}}Item {
+  /** 主键 ID */
+  id: number | string;
+  /** 创建时间 */
+  created_at?: string;
+  /** 更新时间 */
+  updated_at?: string;
+  [key: string]: any;
+}

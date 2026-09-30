@@ -1,0 +1,5 @@
+{
+  "title": "Form Render",
+  "desc": "Demo the same form in edit, readonly, disabled, and detail rendering modes",
+  "mode_title": "Render Mode"
+}

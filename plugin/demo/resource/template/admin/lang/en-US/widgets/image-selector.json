@@ -1,0 +1,17 @@
+{
+  "title": "Image Selector",
+  "desc": "Image selector component examples showing single, multiple, large size and disabled states.",
+  "single_mode": "Single Mode",
+  "multiple_mode": "Multiple Mode",
+  "large_single": "Large Single (with default)",
+  "disabled": "Disabled",
+  "code_example": "Code Examples",
+  "single": "Single",
+  "multiple": "Multiple",
+  "large": "Large",
+  "selected": "Selected",
+  "not_selected": "Not selected",
+  "count": "item(s)",
+  "search": "Search",
+  "disabled_tip": "The component is not clickable in disabled state."
+}

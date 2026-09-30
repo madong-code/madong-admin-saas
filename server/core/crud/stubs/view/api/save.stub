@@ -1,3 +1,0 @@
-export const save = (data: Record<string, any>) => {
-  return requestClient.post(baseUrl, data);
-}

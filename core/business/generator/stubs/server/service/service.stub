@@ -1,0 +1,32 @@
+<?php
+declare(strict_types=1);
+/**
+ *+------------------
+ * madong
+ *+------------------
+ * Copyright (c) https://gitee.com/motion-code  All rights reserved.
+ *+------------------
+ * Author: Mr. April (405784684@qq.com)
+ *+------------------
+ * Official Website: https://madong.tech
+ */
+
+namespace {namespace};
+
+use {dao_namespace}\{class_name}Dao;
+use core\foundation\base\BaseService;
+
+/**
+ * {class_name}服务层
+ *
+ * @author Mr.April
+ * @since  1.0
+ */
+class {class_name}Service extends BaseService
+{
+    public function __construct({class_name}Dao $dao)
+    {
+        $this->dao = $dao;
+    }
+
+}

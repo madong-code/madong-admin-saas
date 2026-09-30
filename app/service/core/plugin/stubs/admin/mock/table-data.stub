@@ -1,0 +1,6 @@
+export const MOCK_TABLE_DATA = Array.from({ length: 50 }, (_, i) => ({
+  id: i + 1,
+  name: `Item ${i + 1}`,
+  status: i % 3 === 0 ? 'enabled' : 'disabled',
+  createdAt: new Date(Date.now() - i * 86400000).toISOString().slice(0, 10),
+}));

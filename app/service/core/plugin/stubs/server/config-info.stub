@@ -1,0 +1,27 @@
+<?php
+
+/**
+ * 插件信息配置
+ */
+
+return [
+    'name'         => '{{pluginName}}',
+    'identifier'   => '{{pluginName}}',
+    'key'          => '{{pluginName}}',
+    'title'        => '{{pluginTitle}}',
+    'description'  => '{{pluginDescription}}',
+    'desc'         => '{{pluginDescription}}',
+    'author'       => 'Your Name',
+    'author_email' => '',
+    'version'      => '1.0.0',
+    'type'         => 'madong:app',
+    'website'      => '',
+    'icon'         => '',
+    'cover'        => '',
+    'support_app'  => '',
+    'status'       => 1,
+    'uninstall'    => [
+        'drop_tables'         => false,
+        'remove_dependencies' => false,
+    ],
+];

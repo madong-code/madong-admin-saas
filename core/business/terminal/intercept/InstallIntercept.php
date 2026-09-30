@@ -1,0 +1,58 @@
+<?php
+declare(strict_types=1);
+
+/**
+ *+------------------
+ * madong
+ *+------------------
+ * Copyright (c) https://gitee.com/motion-code  All rights reserved.
+ *+------------------
+ * Author: Mr. April (405784684@qq.com)
+ *+------------------
+ * Official Website: http://www.madong.tech
+ */
+namespace core\business\terminal\intercept;
+
+use core\foundation\tool\Sse;
+
+/**
+ * 安装依赖拦截器类
+ */
+class InstallIntercept implements InterceptInterface
+{
+    protected string $uuid;
+
+    public function __construct(string $uuid = '')
+    {
+        $this->uuid = $uuid;
+    }
+
+    /**
+     * 前置处理
+     *
+     * @return \Generator
+     */
+    public function before(): \Generator
+    {
+        yield Sse::progress('开始安装依赖...', 0, [], $this->uuid);
+        yield Sse::progress('检查包管理器...', 1, [], $this->uuid);
+        yield Sse::progress('清理旧的依赖文件...', 2, [], $this->uuid);
+    }
+
+    /**
+     * 后置处理
+     *
+     * @param string $commandKey 命令键
+     * @param int $exitCode 退出码
+     *
+     * @return \Generator
+     */
+    public function after(string $commandKey = '', int $exitCode = 0): \Generator
+    {
+        if ($exitCode === 0) {
+            yield Sse::progress('依赖安装成功', 98, [], $this->uuid);
+        } else {
+            yield Sse::progress('依赖安装失败，退出代码: ' . $exitCode, 98, [], $this->uuid);
+        }
+    }
+}

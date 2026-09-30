@@ -1,1 +1,0 @@
-Route::put('{%ROUTE%}/{id}', [\app\admin\controller\crud\.{%NAME_CAMEL%}:class','uppdate'])->name('{%MENUS%}修改接口');

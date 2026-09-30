@@ -1,0 +1,52 @@
+<?php
+declare(strict_types=1);
+/**
+ *+------------------
+ * madong
+ *+------------------
+ * Copyright (c) https://gitee.com/motion-code  All rights reserved.
+ *+------------------
+ * Author: Mr. April (405784684@qq.com)
+ *+------------------
+ * Official Website: https://madong.tech
+ */
+
+namespace DummyNamespace;
+
+use core\found\base\BaseModel;
+
+/**
+ * DummyClass模型
+ *
+ * @author Mr.April
+ * @since  1.0
+ */
+class DummyClass extends BaseModel
+{
+    /**
+     * 数据表名称
+     */
+    protected \$table = 'DummyTable';
+
+    /**
+     * 数据表主键
+     */
+    protected \$primaryKey = 'id';
+
+    /**
+     * 可批量赋值的字段
+     */
+    protected \$fillable = [
+        'id',
+        'created_at',
+        'updated_at',
+    ];
+
+    /**
+     * 追加字段
+     */
+    protected \$appends = [
+        'created_date',
+        'updated_date',
+    ];
+}

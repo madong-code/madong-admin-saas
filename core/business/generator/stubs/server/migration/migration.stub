@@ -1,0 +1,23 @@
+-- ============================================================
+-- madong
+-- ============================================================
+-- Copyright (c) https://gitee.com/motion-code  All rights reserved.
+-- ============================================================
+-- Author: Mr. April (405784684@qq.com)
+-- ============================================================
+-- Official Website: https://madong.tech
+-- ============================================================
+
+-- ============================================================
+-- {class_name} 表结构
+-- 创建时间: {created_at}
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `{table_name}` (
+    `id` bigint(20) unsigned NOT NULL COMMENT '主键ID',
+    {fields}
+    `created_at` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+    `updated_at` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
+    {soft_delete}
+    PRIMARY KEY (`id`) USING BTREE,
+    {indexes}
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='{table_comment}';

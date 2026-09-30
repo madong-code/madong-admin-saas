@@ -1,0 +1,36 @@
+<?php
+declare(strict_types=1);
+/**
+ *+------------------
+ * madong
+ *+------------------
+ * Copyright (c) https://gitee.com/motion-code  All rights reserved.
+ *+------------------
+ * Author: Mr. April (405784684@qq.com)
+ *+------------------
+ * Official Website: https://madong.tech
+ */
+
+namespace DummyNamespace;
+
+use core\found\base\BaseController;
+use support\Request;
+use app\adminapi\controller\Crud;
+
+/**
+ * DummyClass控制器
+ *
+ * @author Mr.April
+ * @since  1.0
+ */
+final class DummyClass extends Crud
+{
+    /**
+     * 构造函数
+     */
+    public function __construct()
+    {
+
+    }
+
+}

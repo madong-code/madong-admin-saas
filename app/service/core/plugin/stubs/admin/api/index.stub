@@ -1,0 +1,34 @@
+import BaseService from '#/api/core/base';
+import { requestClient } from '#/api/request';
+import type { {{camelPluginName}}Item } from './types';
+
+const baseUrl = '/{{pluginKey}}';
+
+export const {{camelPluginName}}Service = {
+  ...BaseService<{{camelPluginName}}Item>({ baseUrl }),
+
+  /** 获取列表 */
+  getList(params?: Record<string, any>) {
+    return requestClient.get(`${baseUrl}/index`, { params });
+  },
+
+  /** 获取详情 */
+  getDetail(id: number | string) {
+    return requestClient.get(`${baseUrl}/view/${id}`);
+  },
+
+  /** 新增 */
+  createItem(data: Record<string, any>) {
+    return requestClient.post(`${baseUrl}/create`, data);
+  },
+
+  /** 更新 */
+  updateItem(id: number | string, data: Record<string, any>) {
+    return requestClient.put(`${baseUrl}/update/${id}`, data);
+  },
+
+  /** 删除（批量） */
+  deleteItem(ids: number[] | string[]) {
+    return requestClient.delete(`${baseUrl}/delete`, { data: { ids } });
+  },
+};

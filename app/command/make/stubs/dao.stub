@@ -1,0 +1,34 @@
+<?php
+declare(strict_types=1);
+/**
+ *+------------------
+ * madong
+ *+------------------
+ * Copyright (c) https://gitee.com/motion-code  All rights reserved.
+ *+------------------
+ * Author: Mr. April (405784684@qq.com)
+ *+------------------
+ * Official Website: https://madong.tech
+ */
+
+namespace DummyNamespace;
+
+use app\model\DummyModel;
+use core\found\base\BaseDao;
+
+/**
+ * DummyClass数据访问对象
+ *
+ * @author Mr.April
+ * @since  1.0
+ */
+class DummyClass extends BaseDao
+{
+    /**
+     * 设置模型类
+     */
+    protected function setModel(): string
+    {
+        return DummyModel::class;
+    }
+}

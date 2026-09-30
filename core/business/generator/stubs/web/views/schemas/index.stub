@@ -1,0 +1,43 @@
+/**
+ *+------------------
+ * madong
+ *+------------------
+ * Copyright (c) https://gitee.com/motion-code  All rights reserved.
+ *+------------------
+ * Author: Mr. April (405784684@qq.com)
+ *+------------------
+ * Official Website: https://madong.tech
+ */
+
+import type { CrudSchema } from '#/components/crud/components/types';
+import { {service_name} } from '{api_import_path}';
+import { $t } from '#/locales';
+
+export const useCrudSchema = (): CrudSchema => {
+  return {
+    crudApi: {
+      list: {service_name}.list,
+      add: {service_name}.create,
+      edit: {service_name}.update,
+      remove: {service_name}.delete,
+      batchRemove: {service_name}.remove,
+      view: {service_name}.get,
+    },
+    columns: [
+      { type: 'checkbox', width: 60 },
+{table_columns}
+    ],
+    searchForm: {
+      enabled: true,
+      schema: [
+{search_form_schema}
+      ],
+    },
+    formDialog: {
+      enabled: true,
+      schema: [
+{form_schema}
+      ],
+    },
+  };
+};

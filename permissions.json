@@ -1,0 +1,3784 @@
+[
+    {
+        "code": "admin:profile:info",
+        "controller": "ProfileController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/auth\/profile\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "个人中心"
+        ],
+        "summary": "获取当前用户信息"
+    },
+    {
+        "code": "admin:profile:update_info",
+        "controller": "ProfileController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/auth\/profile\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "个人中心"
+        ],
+        "summary": "更新个人信息"
+    },
+    {
+        "code": "admin:profile:password",
+        "controller": "ProfileController",
+        "method": "updatePassword",
+        "module": "adminapi",
+        "route": "\/adminapi\/auth\/profile\/update-password",
+        "httpMethod": "PUT",
+        "tags": [
+            "个人中心"
+        ],
+        "summary": "修改密码"
+    },
+    {
+        "code": "admin:profile:avatar",
+        "controller": "ProfileController",
+        "method": "updateAvatar",
+        "module": "adminapi",
+        "route": "\/adminapi\/auth\/profile\/update-avatar",
+        "httpMethod": "PUT",
+        "tags": [
+            "个人中心"
+        ],
+        "summary": "上传并更新头像"
+    },
+    {
+        "code": "admin:profile:sessions",
+        "controller": "ProfileController",
+        "method": "getSessions",
+        "module": "adminapi",
+        "route": "\/adminapi\/auth\/profile\/get-sessions",
+        "httpMethod": "GET",
+        "tags": [
+            "个人中心"
+        ],
+        "summary": "获取在线设备列表"
+    },
+    {
+        "code": "admin:profile:kickout",
+        "controller": "ProfileController",
+        "method": "kickoutSession",
+        "module": "adminapi",
+        "route": "\/adminapi\/auth\/profile\/kickout-session",
+        "httpMethod": "DELETE",
+        "tags": [
+            "个人中心"
+        ],
+        "summary": "强制下线指定设备"
+    },
+    {
+        "code": "system:admin:update_preferences",
+        "controller": "ProfileController",
+        "method": "updatePreferences",
+        "module": "adminapi",
+        "route": "\/adminapi\/auth\/profile\/update-preferences",
+        "httpMethod": "PUT",
+        "tags": [
+            "用户管理"
+        ],
+        "summary": "更新用户前端偏好设置"
+    },
+    {
+        "code": "message:category:list",
+        "controller": "CategoryController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/category\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "消息分类"
+        ],
+        "summary": "消息分类列表"
+    },
+    {
+        "code": "message:category:read",
+        "controller": "CategoryController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/category\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "消息分类"
+        ],
+        "summary": "消息分类详情"
+    },
+    {
+        "code": "message:category:create",
+        "controller": "CategoryController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/category\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "消息分类"
+        ],
+        "summary": "创建消息分类"
+    },
+    {
+        "code": "message:category:update",
+        "controller": "CategoryController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/category\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "消息分类"
+        ],
+        "summary": "更新消息分类"
+    },
+    {
+        "code": "message:category:delete",
+        "controller": "CategoryController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/category\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "消息分类"
+        ],
+        "summary": "删除消息分类"
+    },
+    {
+        "code": "message:category:delete",
+        "controller": "CategoryController",
+        "method": "batchDelete",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/category\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "消息分类"
+        ],
+        "summary": "批量删除消息分类"
+    },
+    {
+        "code": "message:category:list",
+        "controller": "CategoryController",
+        "method": "all",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/category\/all",
+        "httpMethod": "GET",
+        "tags": [
+            "消息分类"
+        ],
+        "summary": "全部分类列表(不分页)"
+    },
+    {
+        "code": "message:category:definitions",
+        "controller": "CategoryController",
+        "method": "definitions",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/category\/definitions",
+        "httpMethod": "GET",
+        "tags": [
+            "消息分类"
+        ],
+        "summary": "分类下消息定义(按ID)"
+    },
+    {
+        "code": "message:category:modules",
+        "controller": "CategoryController",
+        "method": "modules",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/category\/modules",
+        "httpMethod": "GET",
+        "tags": [
+            "消息分类"
+        ],
+        "summary": "分类下模块(兼容旧路由)"
+    },
+    {
+        "code": "message:manage:list",
+        "controller": "ManageController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/manage\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "消息管理"
+        ],
+        "summary": "消息管理列表"
+    },
+    {
+        "code": "message:manage:read",
+        "controller": "ManageController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/manage\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "消息管理"
+        ],
+        "summary": "消息管理详情"
+    },
+    {
+        "code": "message:manage:create",
+        "controller": "ManageController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/manage\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "消息管理"
+        ],
+        "summary": "创建消息管理"
+    },
+    {
+        "code": "message:manage:update",
+        "controller": "ManageController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/manage\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "消息管理"
+        ],
+        "summary": "更新消息管理"
+    },
+    {
+        "code": "message:manage:delete",
+        "controller": "ManageController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/manage\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "消息管理"
+        ],
+        "summary": "删除消息管理（级联删除模板）"
+    },
+    {
+        "code": "message:manage:delete",
+        "controller": "ManageController",
+        "method": "batchDelete",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/manage\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "消息管理"
+        ],
+        "summary": "批量删除消息管理"
+    },
+    {
+        "code": "message:manage:read",
+        "controller": "ManageController",
+        "method": "templateList",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/manage\/template-list",
+        "httpMethod": "GET",
+        "tags": [
+            "消息管理"
+        ],
+        "summary": "获取消息关联的模板列表"
+    },
+    {
+        "code": "message:manage:update",
+        "controller": "ManageController",
+        "method": "templateSync",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/manage\/template-sync",
+        "httpMethod": "POST",
+        "tags": [
+            "消息管理"
+        ],
+        "summary": "同步消息关联的模板（全量覆盖）"
+    },
+    {
+        "code": "message:subscribe:list",
+        "controller": "SubscribeController",
+        "method": "mine",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/subscribe\/mine",
+        "httpMethod": "GET",
+        "tags": [
+            "消息订阅"
+        ],
+        "summary": "我的订阅（分页）"
+    },
+    {
+        "code": "message:subscribe:batch-set",
+        "controller": "SubscribeController",
+        "method": "batchSet",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/subscribe\/batch-set",
+        "httpMethod": "POST",
+        "tags": [
+            "消息订阅"
+        ],
+        "summary": "批量设置订阅"
+    },
+    {
+        "code": "message:subscribe:init",
+        "controller": "SubscribeController",
+        "method": "init",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/subscribe\/init",
+        "httpMethod": "POST",
+        "tags": [
+            "消息订阅"
+        ],
+        "summary": "初始化订阅"
+    },
+    {
+        "code": "message:template:list",
+        "controller": "TemplateController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/template\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "消息模板"
+        ],
+        "summary": "消息模板列表"
+    },
+    {
+        "code": "message:template:read",
+        "controller": "TemplateController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/template\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "消息模板"
+        ],
+        "summary": "消息模板详情"
+    },
+    {
+        "code": "message:template:create",
+        "controller": "TemplateController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/template\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "消息模板"
+        ],
+        "summary": "创建消息模板"
+    },
+    {
+        "code": "message:template:update",
+        "controller": "TemplateController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/template\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "消息模板"
+        ],
+        "summary": "更新消息模板"
+    },
+    {
+        "code": "message:template:delete",
+        "controller": "TemplateController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/template\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "消息模板"
+        ],
+        "summary": "删除消息模板"
+    },
+    {
+        "code": "message:template:delete",
+        "controller": "TemplateController",
+        "method": "batchDelete",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/message\/template\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "消息模板"
+        ],
+        "summary": "批量删除消息模板"
+    },
+    {
+        "code": "notepad:document:list",
+        "controller": "DocumentController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/notepad\/document\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "获取文档列表"
+    },
+    {
+        "code": "notepad:document:read",
+        "controller": "DocumentController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/notepad\/document\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "获取文档详情"
+    },
+    {
+        "code": "notepad:document:create",
+        "controller": "DocumentController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/notepad\/document\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "创建文档"
+    },
+    {
+        "code": "notepad:document:update",
+        "controller": "DocumentController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/notepad\/document\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "更新文档"
+    },
+    {
+        "code": "notepad:document:update",
+        "controller": "DocumentController",
+        "method": "move",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/notepad\/document\/move",
+        "httpMethod": "PUT",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "移动文档到其他文件夹"
+    },
+    {
+        "code": "notepad:document:delete",
+        "controller": "DocumentController",
+        "method": "delete",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/notepad\/document\/delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "删除文档"
+    },
+    {
+        "code": "notepad:folder:list",
+        "controller": "FolderController",
+        "method": "tree",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/notepad\/folder\/tree",
+        "httpMethod": "GET",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "获取文件夹树"
+    },
+    {
+        "code": "notepad:folder:list",
+        "controller": "FolderController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/notepad\/folder\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "获取所有文件夹"
+    },
+    {
+        "code": "notepad:folder:create",
+        "controller": "FolderController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/notepad\/folder\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "创建文件夹"
+    },
+    {
+        "code": "notepad:folder:update",
+        "controller": "FolderController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/notepad\/folder\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "更新文件夹"
+    },
+    {
+        "code": "notepad:folder:delete",
+        "controller": "FolderController",
+        "method": "delete",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/notepad\/folder\/delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "删除文件夹(含子文件夹和文档)"
+    },
+    {
+        "code": "content:review:manage:list",
+        "controller": "ReviewController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "审核管理"
+        ],
+        "summary": "审核列表(运行中)"
+    },
+    {
+        "code": "content:review:manage:archive",
+        "controller": "ReviewController",
+        "method": "archive",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review\/archive",
+        "httpMethod": "GET",
+        "tags": [
+            "审核管理"
+        ],
+        "summary": "审核列表(已归档)"
+    },
+    {
+        "code": "content:review:manage:read",
+        "controller": "ReviewController",
+        "method": "detail",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review\/detail",
+        "httpMethod": "GET",
+        "tags": [
+            "审核管理"
+        ],
+        "summary": "审核详情(含表单\/审核信息\/状态\/事件)"
+    },
+    {
+        "code": "content:review:manage:archive:read",
+        "controller": "ReviewController",
+        "method": "archiveDetail",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review\/archive-detail",
+        "httpMethod": "GET",
+        "tags": [
+            "审核管理"
+        ],
+        "summary": "审核详情(已归档)"
+    },
+    {
+        "code": "content:review:manage:approve",
+        "controller": "ReviewController",
+        "method": "approve",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review\/approve",
+        "httpMethod": "POST",
+        "tags": [
+            "审核管理"
+        ],
+        "summary": "通过审核"
+    },
+    {
+        "code": "content:review:manage:reject",
+        "controller": "ReviewController",
+        "method": "reject",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review\/reject",
+        "httpMethod": "POST",
+        "tags": [
+            "审核管理"
+        ],
+        "summary": "拒绝审核"
+    },
+    {
+        "code": "content:review:manage:cancel",
+        "controller": "ReviewController",
+        "method": "cancel",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review\/cancel",
+        "httpMethod": "POST",
+        "tags": [
+            "审核管理"
+        ],
+        "summary": "取消审核"
+    },
+    {
+        "code": "content:review:manage:approve",
+        "controller": "ReviewController",
+        "method": "batchApprove",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review\/batch-approve",
+        "httpMethod": "POST",
+        "tags": [
+            "审核管理"
+        ],
+        "summary": "批量通过审核"
+    },
+    {
+        "code": "content:review:manage:reject",
+        "controller": "ReviewController",
+        "method": "batchReject",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review\/batch-reject",
+        "httpMethod": "POST",
+        "tags": [
+            "审核管理"
+        ],
+        "summary": "批量拒绝审核"
+    },
+    {
+        "code": "content:review:manage:index",
+        "controller": "ReviewController",
+        "method": "types",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review\/types",
+        "httpMethod": "GET",
+        "tags": [
+            "审核管理"
+        ],
+        "summary": "审核类型下拉"
+    },
+    {
+        "code": "content:review:manage:index",
+        "controller": "ReviewController",
+        "method": "statistics",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review\/statistics",
+        "httpMethod": "GET",
+        "tags": [
+            "审核管理"
+        ],
+        "summary": "审核统计"
+    },
+    {
+        "code": "content:review:manage:read",
+        "controller": "ReviewController",
+        "method": "flowProgress",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review\/flow-progress",
+        "httpMethod": "GET",
+        "tags": [
+            "审核管理"
+        ],
+        "summary": "审批流进度"
+    },
+    {
+        "code": "content:review:log:list",
+        "controller": "ReviewLogController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review-log\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "审核操作日志"
+        ],
+        "summary": "审核操作日志列表"
+    },
+    {
+        "code": "content:review:log:delete",
+        "controller": "ReviewLogController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review-log\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "审核操作日志"
+        ],
+        "summary": "删除操作日志"
+    },
+    {
+        "code": "content:review:log:clean",
+        "controller": "ReviewLogController",
+        "method": "clean",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review-log\/clean",
+        "httpMethod": "POST",
+        "tags": [
+            "审核操作日志"
+        ],
+        "summary": "清理操作日志"
+    },
+    {
+        "code": "content:review:record:list",
+        "controller": "ReviewRecordController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review-record\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "审核记录"
+        ],
+        "summary": "审核记录列表"
+    },
+    {
+        "code": "content:review:record:archive",
+        "controller": "ReviewRecordController",
+        "method": "archive",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review-record\/archive",
+        "httpMethod": "GET",
+        "tags": [
+            "审核记录"
+        ],
+        "summary": "审核记录列表(已归档)"
+    },
+    {
+        "code": "content:review:record:read",
+        "controller": "ReviewRecordController",
+        "method": "detail",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review-record\/detail",
+        "httpMethod": "GET",
+        "tags": [
+            "审核记录"
+        ],
+        "summary": "审核记录详情"
+    },
+    {
+        "code": "content:review:record:archive:read",
+        "controller": "ReviewRecordController",
+        "method": "archiveDetail",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review-record\/archive-detail",
+        "httpMethod": "GET",
+        "tags": [
+            "审核记录"
+        ],
+        "summary": "审核记录详情(已归档)"
+    },
+    {
+        "code": "content:review:record:index",
+        "controller": "ReviewRecordController",
+        "method": "types",
+        "module": "adminapi",
+        "route": "\/adminapi\/content\/review\/review-record\/types",
+        "httpMethod": "GET",
+        "tags": [
+            "审核记录"
+        ],
+        "summary": "审核类型下拉"
+    },
+    {
+        "code": "generator:code:list",
+        "controller": "GeneratorController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/devtools\/generator\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "generator:code:list",
+        "controller": "GeneratorController",
+        "method": "tableList",
+        "module": "adminapi",
+        "route": "\/adminapi\/devtools\/generator\/table-list",
+        "httpMethod": "GET",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "数据库表-列表"
+    },
+    {
+        "code": "generator:code:create",
+        "controller": "GeneratorController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/devtools\/generator\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "生成代码"
+    },
+    {
+        "code": "generator:code:delete",
+        "controller": "GeneratorController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/devtools\/generator\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "generator:code:delete",
+        "controller": "GeneratorController",
+        "method": "remove",
+        "module": "adminapi",
+        "route": "\/adminapi\/devtools\/generator\/remove",
+        "httpMethod": "DELETE",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "generator:code:read",
+        "controller": "GeneratorController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/devtools\/generator\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "generator:code:update",
+        "controller": "GeneratorController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/devtools\/generator\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "更新"
+    },
+    {
+        "code": "generator:code:preview",
+        "controller": "GeneratorController",
+        "method": "preview",
+        "module": "adminapi",
+        "route": "\/adminapi\/devtools\/generator\/preview",
+        "httpMethod": "GET",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "预览"
+    },
+    {
+        "code": "generator:code:download",
+        "controller": "GeneratorController",
+        "method": "download",
+        "module": "adminapi",
+        "route": "\/adminapi\/devtools\/generator\/download",
+        "httpMethod": "GET",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "下载"
+    },
+    {
+        "code": "generator:code:deploy",
+        "controller": "GeneratorController",
+        "method": "deploy",
+        "module": "adminapi",
+        "route": "\/adminapi\/devtools\/generator\/deploy",
+        "httpMethod": "PUT",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "部署"
+    },
+    {
+        "code": "terminal:config:read",
+        "controller": "TerminalController",
+        "method": "config",
+        "module": "adminapi",
+        "route": "\/adminapi\/devtools\/terminal\/config",
+        "httpMethod": "GET",
+        "tags": [
+            "终端管理"
+        ],
+        "summary": "获取终端配置"
+    },
+    {
+        "code": "terminal:config:create",
+        "controller": "TerminalController",
+        "method": "updateConfig",
+        "module": "adminapi",
+        "route": "\/adminapi\/devtools\/terminal\/update-config",
+        "httpMethod": "POST",
+        "tags": [
+            "终端管理"
+        ],
+        "summary": "更新终端配置"
+    },
+    {
+        "code": "terminal:config:commands",
+        "controller": "TerminalController",
+        "method": "commands",
+        "module": "adminapi",
+        "route": "\/adminapi\/devtools\/terminal\/commands",
+        "httpMethod": "GET",
+        "tags": [
+            "终端管理"
+        ],
+        "summary": "获取命令列表（带分组）"
+    },
+    {
+        "code": "terminal:exec",
+        "controller": "TerminalController",
+        "method": "exec",
+        "module": "adminapi",
+        "route": "\/adminapi\/devtools\/terminal\/exec",
+        "httpMethod": "GET",
+        "tags": [
+            "终端管理"
+        ],
+        "summary": "执行命令（SSE方式）"
+    },
+    {
+        "code": "terminal:execute",
+        "controller": "TerminalController",
+        "method": "execute",
+        "module": "adminapi",
+        "route": "\/adminapi\/devtools\/terminal\/execute",
+        "httpMethod": "POST",
+        "tags": [
+            "终端管理"
+        ],
+        "summary": "执行命令（简单方式）"
+    },
+    {
+        "code": "crontab:task:list",
+        "controller": "CrontabController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/crontab\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "定时任务"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "crontab:task:read",
+        "controller": "CrontabController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/crontab\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "定时任务"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "crontab:task:create",
+        "controller": "CrontabController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/crontab\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "定时任务"
+        ],
+        "summary": "添加"
+    },
+    {
+        "code": "crontab:task:delete",
+        "controller": "CrontabController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/crontab\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "定时任务"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "crontab:task:delete",
+        "controller": "CrontabController",
+        "method": "batchDelete",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/crontab\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "定时任务"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "crontab:task:update",
+        "controller": "CrontabController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/crontab\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "定时任务"
+        ],
+        "summary": "更新"
+    },
+    {
+        "code": "crontab:task:resume",
+        "controller": "CrontabController",
+        "method": "resume",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/crontab\/resume",
+        "httpMethod": "PUT",
+        "tags": [
+            "定时任务"
+        ],
+        "summary": "恢复"
+    },
+    {
+        "code": "crontab:task:pause",
+        "controller": "CrontabController",
+        "method": "pause",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/crontab\/pause",
+        "httpMethod": "PUT",
+        "tags": [
+            "定时任务"
+        ],
+        "summary": "暂停"
+    },
+    {
+        "code": "crontab:task:execute",
+        "controller": "CrontabController",
+        "method": "execute",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/crontab\/execute",
+        "httpMethod": "PUT",
+        "tags": [
+            "定时任务"
+        ],
+        "summary": "执行"
+    },
+    {
+        "code": "crontab:log:list",
+        "controller": "CrontabLogController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/crontab-log\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "定时任务.日志"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "crontab:log:read",
+        "controller": "CrontabLogController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/crontab-log\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "定时任务.日志"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "crontab:log:delete",
+        "controller": "CrontabLogController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/crontab-log\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "定时任务.日志"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "crontab:log:delete",
+        "controller": "CrontabLogController",
+        "method": "batchDelete",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/crontab-log\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "定时任务.日志"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "logs:login:list",
+        "controller": "LoginLogController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/login-log\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "日志管理.登录"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "logs:login:read",
+        "controller": "LoginLogController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/login-log\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "日志管理.登录"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "logs:login:delete",
+        "controller": "LoginLogController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/login-log\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "日志管理.登录"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "logs:login:delete",
+        "controller": "LoginLogController",
+        "method": "batchDelete",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/login-log\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "日志管理.登录"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "logs:operate:list",
+        "controller": "OperateLogController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/operate-log\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "日志管理.操作"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "logs:operate:read",
+        "controller": "OperateLogController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/operate-log\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "日志管理.操作"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "logs:operate:delete",
+        "controller": "OperateLogController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/operate-log\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "日志管理.操作"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "logs:operate:delete",
+        "controller": "OperateLogController",
+        "method": "batchDelete",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/operate-log\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "日志管理.操作"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "gateway:limiter:list",
+        "controller": "RateLimiterController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/rate-limiter\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "限访规则"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "gateway:limiter:read",
+        "controller": "RateLimiterController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/rate-limiter\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "限访规则"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "gateway:limiter:create",
+        "controller": "RateLimiterController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/rate-limiter\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "限访规则"
+        ],
+        "summary": "保存"
+    },
+    {
+        "code": "gateway:limiter:status",
+        "controller": "RateLimiterController",
+        "method": "changeStatus",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/rate-limiter\/change-status",
+        "httpMethod": "PUT",
+        "tags": [
+            "限访规则"
+        ],
+        "summary": "更新状态"
+    },
+    {
+        "code": "gateway:limiter:update",
+        "controller": "RateLimiterController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/rate-limiter\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "限访规则"
+        ],
+        "summary": "更新"
+    },
+    {
+        "code": "gateway:limiter:delete",
+        "controller": "RateLimiterController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/rate-limiter\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "限访规则"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "gateway:limiter:delete",
+        "controller": "RateLimiterController",
+        "method": "batchDelete",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/rate-limiter\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "限访规则"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "gateway:blacklist:list",
+        "controller": "RateRestrictionsController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/rate-restrictions\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "限访名单"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "gateway:blacklist:read",
+        "controller": "RateRestrictionsController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/rate-restrictions\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "限访名单"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "gateway:blacklist:create",
+        "controller": "RateRestrictionsController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/rate-restrictions\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "限访名单"
+        ],
+        "summary": "保存"
+    },
+    {
+        "code": "gateway:blacklist:status",
+        "controller": "RateRestrictionsController",
+        "method": "changeStatus",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/rate-restrictions\/change-status",
+        "httpMethod": "PUT",
+        "tags": [
+            "限访名单"
+        ],
+        "summary": "切换状态"
+    },
+    {
+        "code": "gateway:blacklist:update",
+        "controller": "RateRestrictionsController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/rate-restrictions\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "限访名单"
+        ],
+        "summary": "更新"
+    },
+    {
+        "code": "gateway:blacklist:delete",
+        "controller": "RateRestrictionsController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/rate-restrictions\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "限访名单"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "gateway:blacklist:delete",
+        "controller": "RateRestrictionsController",
+        "method": "batchDelete",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/rate-restrictions\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "限访名单"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "monitor:redis:read",
+        "controller": "RedisController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/redis\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "系统监控"
+        ],
+        "summary": "Redis监控"
+    },
+    {
+        "code": "monitor:server:read",
+        "controller": "ServerController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/ops\/server\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "系统监控"
+        ],
+        "summary": "性能监控"
+    },
+    {
+        "code": "plugin:market:list",
+        "controller": "PluginController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "plugin:market:list",
+        "controller": "PluginController",
+        "method": "select",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin\/select",
+        "httpMethod": "GET",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "下拉选择列表"
+    },
+    {
+        "code": "plugin:market:detail",
+        "controller": "PluginController",
+        "method": "detail",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin\/detail",
+        "httpMethod": "GET",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "plugin:market:download",
+        "controller": "PluginController",
+        "method": "download",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin\/download",
+        "httpMethod": "GET",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "获取下载链接"
+    },
+    {
+        "code": "plugin:market:upgrade-logs",
+        "controller": "PluginController",
+        "method": "upgradeLogs",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin\/upgrade-logs",
+        "httpMethod": "GET",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "升级日志"
+    },
+    {
+        "code": "plugin:market:install",
+        "controller": "PluginController",
+        "method": "checkEnvironment",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin\/check-environment",
+        "httpMethod": "GET",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "环境检测"
+    },
+    {
+        "code": "plugin:market:install",
+        "controller": "PluginController",
+        "method": "install",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin\/install",
+        "httpMethod": "GET",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "安装(SSE流式)"
+    },
+    {
+        "code": "plugin:market:uninstall",
+        "controller": "PluginController",
+        "method": "uninstall",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin\/uninstall",
+        "httpMethod": "GET",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "卸载(SSE流式)"
+    },
+    {
+        "code": "plugin:market:destroy",
+        "controller": "PluginController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "删除插件"
+    },
+    {
+        "code": "plugin:develop:list",
+        "controller": "PluginDevelopController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin-develop\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "插件开发"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "plugin:develop:read",
+        "controller": "PluginDevelopController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin-develop\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "插件开发"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "plugin:develop:create",
+        "controller": "PluginDevelopController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin-develop\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "插件开发"
+        ],
+        "summary": "创建"
+    },
+    {
+        "code": "plugin:develop:update",
+        "controller": "PluginDevelopController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin-develop\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "插件开发"
+        ],
+        "summary": "编辑"
+    },
+    {
+        "code": "plugin:develop:delete",
+        "controller": "PluginDevelopController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin-develop\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "插件开发"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "plugin:develop:delete",
+        "controller": "PluginDevelopController",
+        "method": "batchDestroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin-develop\/batch-destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "插件开发"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "plugin:develop:build",
+        "controller": "PluginDevelopController",
+        "method": "build",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin-develop\/build",
+        "httpMethod": "POST",
+        "tags": [
+            "插件开发"
+        ],
+        "summary": "打包"
+    },
+    {
+        "code": "madong:delegation:read",
+        "controller": "PluginMadongAuthController",
+        "method": "read",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin-madong-auth\/read",
+        "httpMethod": "GET",
+        "tags": [
+            "应用授权"
+        ],
+        "summary": "获取插件授权信息"
+    },
+    {
+        "code": "madong:delegation:setting",
+        "controller": "PluginMadongAuthController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/plugin-madong-auth\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "应用授权"
+        ],
+        "summary": "设置插件授权信息"
+    },
+    {
+        "code": "tenant:plugin:list",
+        "controller": "TenantPluginController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/tenant-plugin\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "租户插件"
+        ],
+        "summary": "获取租户可用插件列表"
+    },
+    {
+        "code": "tenant:plugin:toggle-status",
+        "controller": "TenantPluginController",
+        "method": "toggleStatus",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/tenant-plugin\/toggle-status",
+        "httpMethod": "PUT",
+        "tags": [
+            "租户插件"
+        ],
+        "summary": "切换插件启用\/停用"
+    },
+    {
+        "code": "tenant:plugin:detail",
+        "controller": "TenantPluginController",
+        "method": "detail",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/tenant-plugin\/detail",
+        "httpMethod": "GET",
+        "tags": [
+            "租户插件"
+        ],
+        "summary": "获取插件详情（含隔离模式信息）"
+    },
+    {
+        "code": "tenant:plugin:cleanup-plan",
+        "controller": "TenantPluginController",
+        "method": "cleanupPlan",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/tenant-plugin\/cleanup-plan",
+        "httpMethod": "GET",
+        "tags": [
+            "租户插件"
+        ],
+        "summary": "卸载前预览清理计划"
+    },
+    {
+        "code": "tenant:plugin:install",
+        "controller": "TenantPluginController",
+        "method": "install",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/tenant-plugin\/install",
+        "httpMethod": "GET",
+        "tags": [
+            "租户插件"
+        ],
+        "summary": "租户安装插件(SSE流式)"
+    },
+    {
+        "code": "tenant:plugin:uninstall",
+        "controller": "TenantPluginController",
+        "method": "uninstall",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/tenant-plugin\/uninstall",
+        "httpMethod": "GET",
+        "tags": [
+            "租户插件"
+        ],
+        "summary": "租户卸载插件(SSE流式)"
+    },
+    {
+        "code": "tenant:plugin:update",
+        "controller": "TenantPluginController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/tenant-plugin\/update",
+        "httpMethod": "GET",
+        "tags": [
+            "租户插件"
+        ],
+        "summary": "租户更新插件(SSE流式,委派 Orchestrator)"
+    },
+    {
+        "code": "tenant:plugin:status",
+        "controller": "TenantPluginController",
+        "method": "installStatus",
+        "module": "adminapi",
+        "route": "\/adminapi\/plugin\/tenant-plugin\/install-status",
+        "httpMethod": "GET",
+        "tags": [
+            "租户插件"
+        ],
+        "summary": "租户插件三态(available\/installed\/upgradeable)"
+    },
+    {
+        "code": "system:admin:list",
+        "controller": "AdminController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/admin\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "用户管理"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "system:admin:create",
+        "controller": "AdminController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/admin\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "用户管理"
+        ],
+        "summary": "插入"
+    },
+    {
+        "code": "system:admin:update",
+        "controller": "AdminController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/admin\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "用户管理"
+        ],
+        "summary": "更新"
+    },
+    {
+        "code": "system:admin:read",
+        "controller": "AdminController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/admin\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "用户管理"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "system:admin:locked",
+        "controller": "AdminController",
+        "method": "locked",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/admin\/locked",
+        "httpMethod": "PUT",
+        "tags": [
+            "用户管理"
+        ],
+        "summary": "禁用"
+    },
+    {
+        "code": "system:admin:unlocked",
+        "controller": "AdminController",
+        "method": "unLocked",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/admin\/un-locked",
+        "httpMethod": "PUT",
+        "tags": [
+            "用户管理"
+        ],
+        "summary": "解除"
+    },
+    {
+        "code": "system:admin:change_password",
+        "controller": "AdminController",
+        "method": "changePassword",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/admin\/change-password",
+        "httpMethod": "PUT",
+        "tags": [
+            "用户管理"
+        ],
+        "summary": "重置密码"
+    },
+    {
+        "code": "system:admin:grant_role",
+        "controller": "AdminController",
+        "method": "grantRole",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/admin\/grant-role",
+        "httpMethod": "POST",
+        "tags": [
+            "用户管理"
+        ],
+        "summary": "授权角色"
+    },
+    {
+        "code": "system:admin:delete",
+        "controller": "AdminController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/admin\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "用户管理"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "system:admin:delete",
+        "controller": "AdminController",
+        "method": "batchDelete",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/admin\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "用户管理"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "system:auth:user_info",
+        "controller": "AuthController",
+        "method": "getUserInfo",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/auth\/get-user-info",
+        "httpMethod": "GET",
+        "tags": [
+            "权限相关"
+        ],
+        "summary": "获取登录用户"
+    },
+    {
+        "code": "system:auth:user_menus",
+        "controller": "AuthController",
+        "method": "getPermissionsMenu",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/auth\/get-permissions-menu",
+        "httpMethod": "GET",
+        "tags": [
+            "权限相关"
+        ],
+        "summary": "获取用户-权限菜单"
+    },
+    {
+        "code": "system:auth:user_permissions",
+        "controller": "AuthController",
+        "method": "getPermissions",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/auth\/get-permissions",
+        "httpMethod": "GET",
+        "tags": [
+            "权限相关"
+        ],
+        "summary": "权限菜单-包含所有 菜单 按钮  接口"
+    },
+    {
+        "code": "system:auth:perm_code",
+        "controller": "AuthController",
+        "method": "getUserCodes",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/auth\/get-user-codes",
+        "httpMethod": "GET",
+        "tags": [
+            "权限相关"
+        ],
+        "summary": "获取用户-权限码"
+    },
+    {
+        "code": "system:auth:role_menu_ids",
+        "controller": "AuthController",
+        "method": "roleMenuIds",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/auth\/role-menu-ids",
+        "httpMethod": "GET",
+        "tags": [
+            "权限相关"
+        ],
+        "summary": "通过角色ID获取权限ID集合"
+    },
+    {
+        "code": "system:auth:role_scope_ids",
+        "controller": "AuthController",
+        "method": "roleScopeIds",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/auth\/role-scope-ids",
+        "httpMethod": "GET",
+        "tags": [
+            "权限相关"
+        ],
+        "summary": "通过角色ID获取权限范围自定义部门ID集合"
+    },
+    {
+        "code": "system:auth:role_menu",
+        "controller": "AuthController",
+        "method": "saveRoleMenuRelation",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/auth\/save-role-menu-relation",
+        "httpMethod": "POST",
+        "tags": [
+            "权限相关"
+        ],
+        "summary": "保存角色菜单关系"
+    },
+    {
+        "code": "system:auth:role_user_list",
+        "controller": "AuthController",
+        "method": "getUsersByRoleId",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/auth\/get-users-by-role-id",
+        "httpMethod": "GET",
+        "tags": [
+            "权限相关"
+        ],
+        "summary": "获取角色-关联用户列表"
+    },
+    {
+        "code": "system:auth:save_user_role",
+        "controller": "AuthController",
+        "method": "saveUserRoles",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/auth\/save-user-roles",
+        "httpMethod": "POST",
+        "tags": [
+            "权限相关"
+        ],
+        "summary": "保存用户-关联角色"
+    },
+    {
+        "code": "system:auth:remove_user_role",
+        "controller": "AuthController",
+        "method": "removeUserRole",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/auth\/remove-user-role",
+        "httpMethod": "POST",
+        "tags": [
+            "权限相关"
+        ],
+        "summary": "移除用户-关联角色"
+    },
+    {
+        "code": "system:auth:user_list_exclude_role",
+        "controller": "AuthController",
+        "method": "getUsersExcludingRole",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/auth\/get-users-excluding-role",
+        "httpMethod": "GET",
+        "tags": [
+            "权限相关"
+        ],
+        "summary": "获取用户列表-排除指定角色id"
+    },
+    {
+        "code": "system:auth:refresh_token",
+        "controller": "AuthController",
+        "method": "refreshToken",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/auth\/refresh-token",
+        "httpMethod": "POST",
+        "tags": [
+            "权限相关"
+        ],
+        "summary": "刷新Token"
+    },
+    {
+        "code": "system:config:create",
+        "controller": "ConfigController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/config\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "系统配置"
+        ],
+        "summary": "保存单个配置"
+    },
+    {
+        "code": "system:config:update",
+        "controller": "ConfigController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/config\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "系统配置"
+        ],
+        "summary": "更新配置"
+    },
+    {
+        "code": "system:config:update_value",
+        "controller": "ConfigController",
+        "method": "setValue",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/config\/set-value",
+        "httpMethod": "PUT",
+        "tags": [
+            "系统配置"
+        ],
+        "summary": "更新特定配置项的特定键值"
+    },
+    {
+        "code": "system:config:create",
+        "controller": "ConfigController",
+        "method": "createItem",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/config\/create-item",
+        "httpMethod": "POST",
+        "tags": [
+            "系统配置"
+        ],
+        "summary": "创建配置项"
+    },
+    {
+        "code": "system:config:update",
+        "controller": "ConfigController",
+        "method": "updateItem",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/config\/update-item",
+        "httpMethod": "PUT",
+        "tags": [
+            "系统配置"
+        ],
+        "summary": "更新配置项"
+    },
+    {
+        "code": "system:config:update",
+        "controller": "ConfigController",
+        "method": "toggleItem",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/config\/toggle-item",
+        "httpMethod": "PUT",
+        "tags": [
+            "系统配置"
+        ],
+        "summary": "切换配置项状态"
+    },
+    {
+        "code": "system:config:delete",
+        "controller": "ConfigController",
+        "method": "delete",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/config\/delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "系统配置"
+        ],
+        "summary": "删除配置项"
+    },
+    {
+        "code": "org:dept:list",
+        "controller": "DeptController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dept\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "部门管理"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "org:dept:create",
+        "controller": "DeptController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dept\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "部门管理"
+        ],
+        "summary": "创建"
+    },
+    {
+        "code": "org:dept:delete",
+        "controller": "DeptController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dept\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "部门管理"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "org:dept:delete",
+        "controller": "DeptController",
+        "method": "batchDelete",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dept\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "部门管理"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "org:dept:update",
+        "controller": "DeptController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dept\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "部门管理"
+        ],
+        "summary": "更新"
+    },
+    {
+        "code": "org:dept:read",
+        "controller": "DeptController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dept\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "部门管理"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "dict:dict:list",
+        "controller": "DictController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dict\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "字典管理"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "dict:dict:create",
+        "controller": "DictController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dict\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "字典管理"
+        ],
+        "summary": "新增"
+    },
+    {
+        "code": "dict:dict:update",
+        "controller": "DictController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dict\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "字典管理"
+        ],
+        "summary": "更新"
+    },
+    {
+        "code": "dict:dict:delete",
+        "controller": "DictController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dict\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "字典管理"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "dict:dict:delete",
+        "controller": "DictController",
+        "method": "batchDelete",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dict\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "字典管理"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "dict:dict:read",
+        "controller": "DictController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dict\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "字典管理"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "dict:dict:options",
+        "controller": "DictController",
+        "method": "getByDictType",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dict\/get-by-dict-type",
+        "httpMethod": "GET",
+        "tags": [
+            "字典管理"
+        ],
+        "summary": "根据字典类型获取字典项"
+    },
+    {
+        "code": "dict:dict:enum_list",
+        "controller": "DictController",
+        "method": "enumDictList",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dict\/enum-dict-list",
+        "httpMethod": "GET",
+        "tags": [
+            "字典管理"
+        ],
+        "summary": "枚举字典列表"
+    },
+    {
+        "code": "dict:item:list",
+        "controller": "DictItemController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dict-item\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "字典项管理"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "dict:item:read",
+        "controller": "DictItemController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dict-item\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "字典项管理"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "dict:item:create",
+        "controller": "DictItemController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dict-item\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "字典项管理"
+        ],
+        "summary": "新增"
+    },
+    {
+        "code": "dict:item:update",
+        "controller": "DictItemController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dict-item\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "字典项管理"
+        ],
+        "summary": "更新"
+    },
+    {
+        "code": "dict:item:delete",
+        "controller": "DictItemController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dict-item\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "字典项管理"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "dict:item:delete",
+        "controller": "DictItemController",
+        "method": "batchDelete",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/dict-item\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "字典项管理"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "upload:files:list",
+        "controller": "FilesController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/files\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "附件管理"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "upload:files:read",
+        "controller": "FilesController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/files\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "附件管理"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "upload:files:delete",
+        "controller": "FilesController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/files\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "附件管理"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "upload:files:delete",
+        "controller": "FilesController",
+        "method": "batchDelete",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/files\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "附件管理"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "upload:files:fetch_and_save_image",
+        "controller": "FilesController",
+        "method": "downloadNetworkImage",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/files\/download-network-image",
+        "httpMethod": "POST",
+        "tags": [
+            "附件管理"
+        ],
+        "summary": "上传网络图片到服务器"
+    },
+    {
+        "code": "upload:files:download_by_id",
+        "controller": "FilesController",
+        "method": "downloadResourceById",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/files\/download-resource-by-id",
+        "httpMethod": "GET",
+        "tags": [
+            "附件管理"
+        ],
+        "summary": "根据ID下载资源"
+    },
+    {
+        "code": "upload:files:download_by_hash",
+        "controller": "FilesController",
+        "method": "downloadResourceByHash",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/files\/download-resource-by-hash",
+        "httpMethod": "GET",
+        "tags": [
+            "附件管理"
+        ],
+        "summary": "根据hash下载资源"
+    },
+    {
+        "code": "upload:files:upload_image",
+        "controller": "FilesController",
+        "method": "uploadImage",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/files\/upload-image",
+        "httpMethod": "POST",
+        "tags": [
+            "附件管理"
+        ],
+        "summary": "上传图片"
+    },
+    {
+        "code": "upload:files:upload_file",
+        "controller": "FilesController",
+        "method": "uploadFile",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/files\/upload-file",
+        "httpMethod": "POST",
+        "tags": [
+            "附件管理"
+        ],
+        "summary": "上传文件"
+    },
+    {
+        "code": "upload:files:upload_image_base64",
+        "controller": "FilesController",
+        "method": "uploadImageBase64",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/files\/upload-image-base64",
+        "httpMethod": "POST",
+        "tags": [
+            "附件管理"
+        ],
+        "summary": "上传图片返回base64"
+    },
+    {
+        "code": "upload:files:download_excel",
+        "controller": "FilesController",
+        "method": "downloadExcel",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/files\/download-excel",
+        "httpMethod": "GET",
+        "tags": [
+            "附件管理"
+        ],
+        "summary": "下载导出的excel"
+    },
+    {
+        "code": "upload:files:wangeditor",
+        "controller": "FilesController",
+        "method": "wangeditor",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/files\/wangeditor",
+        "httpMethod": "POST",
+        "tags": [
+            "附件管理"
+        ],
+        "summary": "适配wangeditor编辑器上传接口"
+    },
+    {
+        "code": "system:menu:list",
+        "controller": "MenuController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/menu\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "菜单管理"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "system:menu:read",
+        "controller": "MenuController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/menu\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "菜单管理"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "system:menu:create",
+        "controller": "MenuController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/menu\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "菜单管理"
+        ],
+        "summary": "创建"
+    },
+    {
+        "code": "system:menu:update",
+        "controller": "MenuController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/menu\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "菜单管理"
+        ],
+        "summary": "更新"
+    },
+    {
+        "code": "system:menu:delete",
+        "controller": "MenuController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/menu\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "菜单管理"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "system:menu:batch_store",
+        "controller": "MenuController",
+        "method": "batchStore",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/menu\/batch-store",
+        "httpMethod": "POST",
+        "tags": [
+            "菜单管理"
+        ],
+        "summary": "批量添加菜单"
+    },
+    {
+        "code": "system:menu:app_list",
+        "controller": "MenuController",
+        "method": "appList",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/menu\/app-list",
+        "httpMethod": "GET",
+        "tags": [
+            "菜单管理"
+        ],
+        "summary": "获取应用列表"
+    },
+    {
+        "code": "org:post:list",
+        "controller": "PostController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/post\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "岗位管理"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "org:post:read",
+        "controller": "PostController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/post\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "岗位管理"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "org:post:create",
+        "controller": "PostController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/post\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "岗位管理"
+        ],
+        "summary": "创建"
+    },
+    {
+        "code": "org:post:update",
+        "controller": "PostController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/post\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "岗位管理"
+        ],
+        "summary": "更新"
+    },
+    {
+        "code": "org:post:delete",
+        "controller": "PostController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/post\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "岗位管理"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "org:post:delete",
+        "controller": "PostController",
+        "method": "batchDelete",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/post\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "岗位管理"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "system:recycle:list",
+        "controller": "RecycleBinController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/recycle-bin\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "数据回收站"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "system:recycle:read",
+        "controller": "RecycleBinController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/recycle-bin\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "数据回收站"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "system:recycle:delete",
+        "controller": "RecycleBinController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/recycle-bin\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "数据回收站"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "system:recycle:delete",
+        "controller": "RecycleBinController",
+        "method": "batchDelete",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/recycle-bin\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "数据回收站"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "system:recycle:recover",
+        "controller": "RecycleBinController",
+        "method": "restore",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/recycle-bin\/restore",
+        "httpMethod": "PUT",
+        "tags": [
+            "数据回收站"
+        ],
+        "summary": "恢复"
+    },
+    {
+        "code": [
+            "system:role:list"
+        ],
+        "controller": "RoleController",
+        "method": "index",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/role\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "角色管理"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "system:role:read",
+        "controller": "RoleController",
+        "method": "show",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/role\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "角色管理"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "system:role:create",
+        "controller": "RoleController",
+        "method": "store",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/role\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "角色管理"
+        ],
+        "summary": "新增"
+    },
+    {
+        "code": "system:role:update",
+        "controller": "RoleController",
+        "method": "update",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/role\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "角色管理"
+        ],
+        "summary": "更新"
+    },
+    {
+        "code": "system:role:delete",
+        "controller": "RoleController",
+        "method": "destroy",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/role\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "角色管理"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "system:role:delete",
+        "controller": "RoleController",
+        "method": "batchDelete",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/role\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "角色管理"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "system:role:data_scope",
+        "controller": "RoleController",
+        "method": "dataScope",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/role\/data-scope",
+        "httpMethod": "PUT",
+        "tags": [
+            "角色管理"
+        ],
+        "summary": "分配数据权限"
+    },
+    {
+        "code": "system:role:status",
+        "controller": "RoleController",
+        "method": "changeStatus",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/role\/change-status",
+        "httpMethod": "PUT",
+        "tags": [
+            "角色管理"
+        ],
+        "summary": "切换状态"
+    },
+    {
+        "code": "system:rule:cate",
+        "controller": "RuleController",
+        "method": "cate",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/rule\/cate",
+        "httpMethod": "GET",
+        "tags": [
+            "接口管理"
+        ],
+        "summary": "获取接口分类（基于tags）"
+    },
+    {
+        "code": "system:rule:list",
+        "controller": "RuleController",
+        "method": "list",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/rule\/list",
+        "httpMethod": "GET",
+        "tags": [
+            "接口管理"
+        ],
+        "summary": "获取接口列表（支持分类和搜索）"
+    },
+    {
+        "code": "system:rule:refresh",
+        "controller": "RuleController",
+        "method": "refresh",
+        "module": "adminapi",
+        "route": "\/adminapi\/system\/rule\/refresh",
+        "httpMethod": "POST",
+        "tags": [
+            "接口管理"
+        ],
+        "summary": "刷新接口扫描缓存"
+    },
+    {
+        "code": "platform:notepad:document:list",
+        "controller": "DocumentController",
+        "method": "index",
+        "module": "platform",
+        "route": "\/content\/notepad\/document\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "获取文档列表"
+    },
+    {
+        "code": "platform:notepad:document:read",
+        "controller": "DocumentController",
+        "method": "show",
+        "module": "platform",
+        "route": "\/content\/notepad\/document\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "获取文档详情"
+    },
+    {
+        "code": "platform:notepad:document:create",
+        "controller": "DocumentController",
+        "method": "store",
+        "module": "platform",
+        "route": "\/content\/notepad\/document\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "创建文档"
+    },
+    {
+        "code": "platform:notepad:document:update",
+        "controller": "DocumentController",
+        "method": "update",
+        "module": "platform",
+        "route": "\/content\/notepad\/document\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "更新文档"
+    },
+    {
+        "code": "platform:notepad:document:update",
+        "controller": "DocumentController",
+        "method": "move",
+        "module": "platform",
+        "route": "\/content\/notepad\/document\/move",
+        "httpMethod": "PUT",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "移动文档到其他文件夹"
+    },
+    {
+        "code": "platform:notepad:document:delete",
+        "controller": "DocumentController",
+        "method": "delete",
+        "module": "platform",
+        "route": "\/content\/notepad\/document\/delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "删除文档"
+    },
+    {
+        "code": "platform:notepad:folder:list",
+        "controller": "FolderController",
+        "method": "tree",
+        "module": "platform",
+        "route": "\/content\/notepad\/folder\/tree",
+        "httpMethod": "GET",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "获取文件夹树"
+    },
+    {
+        "code": "platform:notepad:folder:list",
+        "controller": "FolderController",
+        "method": "index",
+        "module": "platform",
+        "route": "\/content\/notepad\/folder\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "获取所有文件夹"
+    },
+    {
+        "code": "platform:notepad:folder:create",
+        "controller": "FolderController",
+        "method": "store",
+        "module": "platform",
+        "route": "\/content\/notepad\/folder\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "创建文件夹"
+    },
+    {
+        "code": "platform:notepad:folder:update",
+        "controller": "FolderController",
+        "method": "update",
+        "module": "platform",
+        "route": "\/content\/notepad\/folder\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "更新文件夹"
+    },
+    {
+        "code": "platform:notepad:folder:delete",
+        "controller": "FolderController",
+        "method": "delete",
+        "module": "platform",
+        "route": "\/content\/notepad\/folder\/delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "记事本"
+        ],
+        "summary": "删除文件夹(含子文件夹和文档)"
+    },
+    {
+        "code": "crontab:task:list",
+        "controller": "CrontabController",
+        "method": "index",
+        "module": "platform",
+        "route": "\/ops\/crontab\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "全局定时任务"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "crontab:task:read",
+        "controller": "CrontabController",
+        "method": "show",
+        "module": "platform",
+        "route": "\/ops\/crontab\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "全局定时任务"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "crontab:task:create",
+        "controller": "CrontabController",
+        "method": "store",
+        "module": "platform",
+        "route": "\/ops\/crontab\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "全局定时任务"
+        ],
+        "summary": "添加"
+    },
+    {
+        "code": "crontab:task:delete",
+        "controller": "CrontabController",
+        "method": "destroy",
+        "module": "platform",
+        "route": "\/ops\/crontab\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "全局定时任务"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "crontab:task:delete",
+        "controller": "CrontabController",
+        "method": "batchDelete",
+        "module": "platform",
+        "route": "\/ops\/crontab\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "全局定时任务"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "crontab:task:update",
+        "controller": "CrontabController",
+        "method": "update",
+        "module": "platform",
+        "route": "\/ops\/crontab\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "全局定时任务"
+        ],
+        "summary": "更新"
+    },
+    {
+        "code": "crontab:task:resume",
+        "controller": "CrontabController",
+        "method": "resume",
+        "module": "platform",
+        "route": "\/ops\/crontab\/resume",
+        "httpMethod": "PUT",
+        "tags": [
+            "全局定时任务"
+        ],
+        "summary": "恢复"
+    },
+    {
+        "code": "crontab:task:pause",
+        "controller": "CrontabController",
+        "method": "pause",
+        "module": "platform",
+        "route": "\/ops\/crontab\/pause",
+        "httpMethod": "PUT",
+        "tags": [
+            "全局定时任务"
+        ],
+        "summary": "暂停"
+    },
+    {
+        "code": "crontab:task:execute",
+        "controller": "CrontabController",
+        "method": "execute",
+        "module": "platform",
+        "route": "\/ops\/crontab\/execute",
+        "httpMethod": "PUT",
+        "tags": [
+            "全局定时任务"
+        ],
+        "summary": "执行"
+    },
+    {
+        "code": "crontab:log:list",
+        "controller": "CrontabLogController",
+        "method": "index",
+        "module": "platform",
+        "route": "\/ops\/crontab-log\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "全局定时任务.日志"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "crontab:log:read",
+        "controller": "CrontabLogController",
+        "method": "show",
+        "module": "platform",
+        "route": "\/ops\/crontab-log\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "全局定时任务.日志"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "crontab:log:delete",
+        "controller": "CrontabLogController",
+        "method": "destroy",
+        "module": "platform",
+        "route": "\/ops\/crontab-log\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "全局定时任务.日志"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "crontab:log:delete",
+        "controller": "CrontabLogController",
+        "method": "batchDelete",
+        "module": "platform",
+        "route": "\/ops\/crontab-log\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "全局定时任务.日志"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "platform:database:setting:list",
+        "controller": "DbSettingController",
+        "method": "index",
+        "module": "platform",
+        "route": "\/ops\/db-setting\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "数据源管理"
+        ],
+        "summary": "获取数据源列表"
+    },
+    {
+        "code": "platform:database:setting:view",
+        "controller": "DbSettingController",
+        "method": "show",
+        "module": "platform",
+        "route": "\/ops\/db-setting\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "数据源管理"
+        ],
+        "summary": "获取数据源详情"
+    },
+    {
+        "code": "platform:database:setting:create",
+        "controller": "DbSettingController",
+        "method": "store",
+        "module": "platform",
+        "route": "\/ops\/db-setting\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "数据源管理"
+        ],
+        "summary": "创建数据源"
+    },
+    {
+        "code": "platform:database:setting:update",
+        "controller": "DbSettingController",
+        "method": "update",
+        "module": "platform",
+        "route": "\/ops\/db-setting\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "数据源管理"
+        ],
+        "summary": "更新数据源"
+    },
+    {
+        "code": "platform:database:setting:delete",
+        "controller": "DbSettingController",
+        "method": "destroy",
+        "module": "platform",
+        "route": "\/ops\/db-setting\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "数据源管理"
+        ],
+        "summary": "删除数据源"
+    },
+    {
+        "code": "platform:database:setting:test",
+        "controller": "DbSettingController",
+        "method": "test",
+        "module": "platform",
+        "route": "\/ops\/db-setting\/test",
+        "httpMethod": "POST",
+        "tags": [
+            "数据源管理"
+        ],
+        "summary": "测试连接（不保存，直接传入连接参数测试）"
+    },
+    {
+        "code": "platform:database:setting:test",
+        "controller": "DbSettingController",
+        "method": "testById",
+        "module": "platform",
+        "route": "\/ops\/db-setting\/test-by-id",
+        "httpMethod": "GET",
+        "tags": [
+            "数据源管理"
+        ],
+        "summary": "测试数据源连接（基于已有记录）"
+    },
+    {
+        "code": "platform:generator:code:list",
+        "controller": "GeneratorController",
+        "method": "index",
+        "module": "platform",
+        "route": "\/ops\/generator\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "platform:generator:code:list",
+        "controller": "GeneratorController",
+        "method": "tableList",
+        "module": "platform",
+        "route": "\/ops\/generator\/table-list",
+        "httpMethod": "GET",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "数据库表-列表"
+    },
+    {
+        "code": "platform:generator:code:create",
+        "controller": "GeneratorController",
+        "method": "store",
+        "module": "platform",
+        "route": "\/ops\/generator\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "生成代码"
+    },
+    {
+        "code": "platform:generator:code:delete",
+        "controller": "GeneratorController",
+        "method": "destroy",
+        "module": "platform",
+        "route": "\/ops\/generator\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "platform:generator:code:delete",
+        "controller": "GeneratorController",
+        "method": "remove",
+        "module": "platform",
+        "route": "\/ops\/generator\/remove",
+        "httpMethod": "DELETE",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "platform:generator:code:read",
+        "controller": "GeneratorController",
+        "method": "show",
+        "module": "platform",
+        "route": "\/ops\/generator\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "platform:generator:code:update",
+        "controller": "GeneratorController",
+        "method": "update",
+        "module": "platform",
+        "route": "\/ops\/generator\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "更新"
+    },
+    {
+        "code": "platform:generator:code:preview",
+        "controller": "GeneratorController",
+        "method": "preview",
+        "module": "platform",
+        "route": "\/ops\/generator\/preview",
+        "httpMethod": "GET",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "预览"
+    },
+    {
+        "code": "platform:generator:code:download",
+        "controller": "GeneratorController",
+        "method": "download",
+        "module": "platform",
+        "route": "\/ops\/generator\/download",
+        "httpMethod": "GET",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "下载"
+    },
+    {
+        "code": "platform:generator:code:deploy",
+        "controller": "GeneratorController",
+        "method": "deploy",
+        "module": "platform",
+        "route": "\/ops\/generator\/deploy",
+        "httpMethod": "PUT",
+        "tags": [
+            "代码生成器"
+        ],
+        "summary": "部署"
+    },
+    {
+        "code": "platform:monitor:login-log:list",
+        "controller": "LoginLogController",
+        "method": "index",
+        "module": "platform",
+        "route": "\/ops\/login-log\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "日志管理.登录"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "platform:monitor:login-log:view",
+        "controller": "LoginLogController",
+        "method": "show",
+        "module": "platform",
+        "route": "\/ops\/login-log\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "日志管理.登录"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "platform:monitor:login-log:delete",
+        "controller": "LoginLogController",
+        "method": "destroy",
+        "module": "platform",
+        "route": "\/ops\/login-log\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "日志管理.登录"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "platform:monitor:login-log:delete",
+        "controller": "LoginLogController",
+        "method": "batchDelete",
+        "module": "platform",
+        "route": "\/ops\/login-log\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "日志管理.登录"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "platform:monitor:operation-log:list",
+        "controller": "OperateLogController",
+        "method": "index",
+        "module": "platform",
+        "route": "\/ops\/operate-log\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "日志管理.操作"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "platform:monitor:operation-log:view",
+        "controller": "OperateLogController",
+        "method": "show",
+        "module": "platform",
+        "route": "\/ops\/operate-log\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "日志管理.操作"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "platform:monitor:operation-log:delete",
+        "controller": "OperateLogController",
+        "method": "destroy",
+        "module": "platform",
+        "route": "\/ops\/operate-log\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "日志管理.操作"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "platform:monitor:operation-log:delete",
+        "controller": "OperateLogController",
+        "method": "batchDelete",
+        "module": "platform",
+        "route": "\/ops\/operate-log\/batch-delete",
+        "httpMethod": "DELETE",
+        "tags": [
+            "日志管理.操作"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "platform:terminal:config:read",
+        "controller": "TerminalController",
+        "method": "config",
+        "module": "platform",
+        "route": "\/ops\/terminal\/config",
+        "httpMethod": "GET",
+        "tags": [
+            "终端管理"
+        ],
+        "summary": "获取终端配置"
+    },
+    {
+        "code": "platform:terminal:config:create",
+        "controller": "TerminalController",
+        "method": "updateConfig",
+        "module": "platform",
+        "route": "\/ops\/terminal\/update-config",
+        "httpMethod": "POST",
+        "tags": [
+            "终端管理"
+        ],
+        "summary": "更新终端配置"
+    },
+    {
+        "code": "platform:terminal:config:commands",
+        "controller": "TerminalController",
+        "method": "commands",
+        "module": "platform",
+        "route": "\/ops\/terminal\/commands",
+        "httpMethod": "GET",
+        "tags": [
+            "终端管理"
+        ],
+        "summary": "获取命令列表（带分组）"
+    },
+    {
+        "code": "platform:terminal:exec",
+        "controller": "TerminalController",
+        "method": "exec",
+        "module": "platform",
+        "route": "\/ops\/terminal\/exec",
+        "httpMethod": "GET",
+        "tags": [
+            "终端管理"
+        ],
+        "summary": "执行命令（SSE方式）"
+    },
+    {
+        "code": "platform:terminal:execute",
+        "controller": "TerminalController",
+        "method": "execute",
+        "module": "platform",
+        "route": "\/ops\/terminal\/execute",
+        "httpMethod": "POST",
+        "tags": [
+            "终端管理"
+        ],
+        "summary": "执行命令（简单方式）"
+    },
+    {
+        "code": "platform:plugin:auth:read",
+        "controller": "PluginAuthController",
+        "method": "index",
+        "module": "platform",
+        "route": "\/plugin\/plugin-auth\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "应用授权"
+        ],
+        "summary": "获取应用授权信息"
+    },
+    {
+        "code": "platform:plugin:market:list",
+        "controller": "PluginController",
+        "method": "index",
+        "module": "platform",
+        "route": "\/plugin\/plugin\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "列表"
+    },
+    {
+        "code": "platform:plugin:market:list",
+        "controller": "PluginController",
+        "method": "select",
+        "module": "platform",
+        "route": "\/plugin\/plugin\/select",
+        "httpMethod": "GET",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "下拉选择列表"
+    },
+    {
+        "code": "platform:plugin:market:detail",
+        "controller": "PluginController",
+        "method": "detail",
+        "module": "platform",
+        "route": "\/plugin\/plugin\/detail",
+        "httpMethod": "GET",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "详情"
+    },
+    {
+        "code": "platform:plugin:market:download",
+        "controller": "PluginController",
+        "method": "download",
+        "module": "platform",
+        "route": "\/plugin\/plugin\/download",
+        "httpMethod": "GET",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "获取下载链接"
+    },
+    {
+        "code": "platform:plugin:market:upgrade-logs",
+        "controller": "PluginController",
+        "method": "upgradeLogs",
+        "module": "platform",
+        "route": "\/plugin\/plugin\/upgrade-logs",
+        "httpMethod": "GET",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "升级日志"
+    },
+    {
+        "code": "platform:plugin:market:install",
+        "controller": "PluginController",
+        "method": "checkEnvironment",
+        "module": "platform",
+        "route": "\/plugin\/plugin\/check-environment",
+        "httpMethod": "GET",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "环境检测"
+    },
+    {
+        "code": "platform:plugin:market:install",
+        "controller": "PluginController",
+        "method": "install",
+        "module": "platform",
+        "route": "\/plugin\/plugin\/install",
+        "httpMethod": "GET",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "安装(SSE流式)"
+    },
+    {
+        "code": "platform:plugin:market:uninstall",
+        "controller": "PluginController",
+        "method": "uninstall",
+        "module": "platform",
+        "route": "\/plugin\/plugin\/uninstall",
+        "httpMethod": "GET",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "卸载(SSE流式)"
+    },
+    {
+        "code": "platform:plugin:market:destroy",
+        "controller": "PluginController",
+        "method": "destroy",
+        "module": "platform",
+        "route": "\/plugin\/plugin\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "模块市场"
+        ],
+        "summary": "删除插件"
+    },
+    {
+        "code": "platform:plugin:develop:list",
+        "controller": "PluginDevelopController",
+        "method": "index",
+        "module": "platform",
+        "route": "\/plugin\/plugin-develop\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "平台-插件开发"
+        ],
+        "summary": "插件开发列表"
+    },
+    {
+        "code": "platform:plugin:develop:detail",
+        "controller": "PluginDevelopController",
+        "method": "show",
+        "module": "platform",
+        "route": "\/plugin\/plugin-develop\/show",
+        "httpMethod": "GET",
+        "tags": [
+            "平台-插件开发"
+        ],
+        "summary": "插件详情"
+    },
+    {
+        "code": "platform:plugin:develop:store",
+        "controller": "PluginDevelopController",
+        "method": "store",
+        "module": "platform",
+        "route": "\/plugin\/plugin-develop\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "平台-插件开发"
+        ],
+        "summary": "创建"
+    },
+    {
+        "code": "platform:plugin:develop:update",
+        "controller": "PluginDevelopController",
+        "method": "update",
+        "module": "platform",
+        "route": "\/plugin\/plugin-develop\/update",
+        "httpMethod": "PUT",
+        "tags": [
+            "平台-插件开发"
+        ],
+        "summary": "编辑"
+    },
+    {
+        "code": "platform:plugin:develop:delete",
+        "controller": "PluginDevelopController",
+        "method": "destroy",
+        "module": "platform",
+        "route": "\/plugin\/plugin-develop\/destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "平台-插件开发"
+        ],
+        "summary": "删除"
+    },
+    {
+        "code": "platform:plugin:develop:delete",
+        "controller": "PluginDevelopController",
+        "method": "batchDestroy",
+        "module": "platform",
+        "route": "\/plugin\/plugin-develop\/batch-destroy",
+        "httpMethod": "DELETE",
+        "tags": [
+            "平台-插件开发"
+        ],
+        "summary": "批量删除"
+    },
+    {
+        "code": "platform:plugin:develop:build",
+        "controller": "PluginDevelopController",
+        "method": "build",
+        "module": "platform",
+        "route": "\/plugin\/plugin-develop\/build",
+        "httpMethod": "POST",
+        "tags": [
+            "平台-插件开发"
+        ],
+        "summary": "打包"
+    },
+    {
+        "code": "platform:madong:delegation:read",
+        "controller": "PluginMadongAuthController",
+        "method": "read",
+        "module": "platform",
+        "route": "\/plugin\/plugin-madong-auth\/read",
+        "httpMethod": "GET",
+        "tags": [
+            "应用授权"
+        ],
+        "summary": "获取madong官网授权信息"
+    },
+    {
+        "code": "platform:madong:delegation:setting",
+        "controller": "PluginMadongAuthController",
+        "method": "store",
+        "module": "platform",
+        "route": "\/plugin\/plugin-madong-auth\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "应用授权"
+        ],
+        "summary": "设置madong官网授权信息"
+    },
+    {
+        "code": "platform:plugin:market:list",
+        "controller": "PluginMarketController",
+        "method": "index",
+        "module": "platform",
+        "route": "\/plugin\/plugin-market\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "平台-模块市场"
+        ],
+        "summary": "模块市场列表"
+    },
+    {
+        "code": "platform:plugin:tenant-auth:list",
+        "controller": "PluginTenantAuthController",
+        "method": "index",
+        "module": "platform",
+        "route": "\/plugin\/plugin-tenant-auth\/index",
+        "httpMethod": "GET",
+        "tags": [
+            "平台-租户授权"
+        ],
+        "summary": "获取租户授权列表"
+    },
+    {
+        "code": "platform:plugin:tenant-auth:store",
+        "controller": "PluginTenantAuthController",
+        "method": "store",
+        "module": "platform",
+        "route": "\/plugin\/plugin-tenant-auth\/store",
+        "httpMethod": "POST",
+        "tags": [
+            "平台-租户授权"
+        ],
+        "summary": "批量设置租户插件授权"
+    },
+    {
+        "code": "platform:plugin:tenant-auth:matrix",
+        "controller": "PluginTenantAuthController",
+        "method": "matrix",
+        "module": "platform",
+        "route": "\/plugin\/plugin-tenant-auth\/matrix",
+        "httpMethod": "GET",
+        "tags": [
+            "平台-租户授权"
+        ],
+        "summary": "平台×租户授权矩阵"
+    },
+    {
+        "code": "platform:plugin:tenant-auth:stats",
+        "controller": "PluginTenantAuthController",
+        "method": "stats",
+        "module": "platform",
+        "route": "\/plugin\/plugin-tenant-auth\/stats",
+        "httpMethod": "GET",
+        "tags": [
+            "平台-租户授权"
+        ],
+        "summary": "升级统计"
+    },
+    {
+        "code": "platform:plugin:tenant-auth:occupying",
+        "controller": "PluginTenantAuthController",
+        "method": "occupying",
+        "module": "platform",
+        "route": "\/plugin\/plugin-tenant-auth\/occupying",
+        "httpMethod": "GET",
+        "tags": [
+            "平台-租户授权"
+        ],
+        "summary": "插件占用清单"
+    },
+    {
+        "code": "platform:plugin:tenant-auth:dependencies",
+        "controller": "PluginTenantAuthController",
+        "method": "dependencies",
+        "module": "platform",
+        "route": "\/plugin\/plugin-tenant-auth\/dependencies",
+        "httpMethod": "GET",
+        "tags": [
+            "平台-租户授权"
+        ],
+        "summary": "依赖项检查"
+    },
+    {
+        "code": "platform:plugin:tenant-auth:install",
+        "controller": "PluginTenantAuthController",
+        "method": "installStream",
+        "module": "platform",
+        "route": "\/plugin\/plugin-tenant-auth\/install",
+        "httpMethod": "GET",
+        "tags": [
+            "平台-租户授权"
+        ],
+        "summary": "远程安装插件到指定租户"
+    },
+    {
+        "code": "platform:plugin:tenant-auth:batch-update",
+        "controller": "PluginTenantAuthController",
+        "method": "batchUpdate",
+        "module": "platform",
+        "route": "\/plugin\/plugin-tenant-auth\/batch-update",
+        "httpMethod": "POST",
+        "tags": [
+            "平台-租户授权"
+        ],
+        "summary": "批量升级(扇出到多个租户)"
+    },
+    {
+        "code": "platform:plugin:tenant-auth:cascade-uninstall",
+        "controller": "PluginTenantAuthController",
+        "method": "cascadeUninstall",
+        "module": "platform",
+        "route": "\/plugin\/plugin-tenant-auth\/cascade-uninstall",
+        "httpMethod": "POST",
+        "tags": [
+            "平台-租户授权"
+        ],
+        "summary": "强制级联卸载(先租户后平台)"
+    }
+]

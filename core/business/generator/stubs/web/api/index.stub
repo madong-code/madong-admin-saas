@@ -1,0 +1,19 @@
+/**
+ *+------------------
+ * madong
+ *+------------------
+ * Copyright (c) https://gitee.com/motion-code  All rights reserved.
+ *+------------------
+ * Author: Mr. April (405784684@qq.com)
+ *+------------------
+ * Official Website: https://madong.tech
+ */
+
+import type { {row_type_name} } from './types';
+import BaseService from '#/api/core/base';
+
+const baseUrl = '{base_url}';
+
+export const {class_name}Service = {
+  ...BaseService<{row_type_name}>({ baseUrl }),
+};

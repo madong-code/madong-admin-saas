@@ -1,2 +1,32 @@
+/runtime
+/storage
 /.idea
 /.vscode
+/vendor
+*.log
+.env
+/tests/tmp
+/tests/.phpunit.result.cache
+install.lock
+.rnd
+
+
+# 忽略运行产生的日志文件
+*.err
+*.out
+
+# 忽略 public目录下除了install,favicon.ico,logo.png之外的内容
+public/*
+!public/install/
+!public/favicon.ico
+!public/logo.png
+!public/upload/logo.png
+
+# 忽略 plugin目录下除了example,demo除外
+plugin/*
+!plugin/example/
+!plugin/demo/
+
+# 忽略tests目录下除了之外的内容
+tests/*
+!tests/.gitkeep

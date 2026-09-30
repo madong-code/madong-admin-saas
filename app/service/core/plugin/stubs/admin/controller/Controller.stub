@@ -1,0 +1,61 @@
+<?php
+/**
+ * {{camelPluginKey}} 控制器
+ */
+
+namespace plugin\{{pluginKey}}\app\adminapi\controller;
+
+use app\adminapi\middleware\OperationMiddleware;
+use app\adminapi\middleware\PermissionMiddleware;
+use core\foundation\tool\Json;
+use madong\swagger\annotation\response\DataResponse;
+use madong\swagger\annotation\response\SimpleResponse;
+use madong\swagger\attribute\Permission;
+use OpenApi\Attributes as OA;
+use support\annotation\Middleware;
+use support\Request;
+use support\Response;
+
+#[Middleware(OperationMiddleware::class, PermissionMiddleware::class)]
+final class {{camelPluginKey}}Controller
+{
+    #[OA\Get(path: '/{{kebabPluginKey}}/index', summary: '获取列表', tags: ['{{pluginKey}}'])]
+    #[DataResponse(description: '获取成功')]
+    #[Permission(code: '{{pluginKey}}:index', description: '列表权限')]
+    public function index(Request $request): Response
+    {
+        return Json::success('获取成功', []);
+    }
+
+    #[OA\Post(path: '/{{kebabPluginKey}}/create', summary: '创建', tags: ['{{pluginKey}}'])]
+    #[SimpleResponse(description: '创建成功')]
+    #[Permission(code: '{{pluginKey}}:create', description: '创建权限')]
+    public function create(Request $request): Response
+    {
+        return Json::success('创建成功');
+    }
+
+    #[OA\Get(path: '/{{kebabPluginKey}}/info', summary: '详情', tags: ['{{pluginKey}}'])]
+    #[DataResponse(description: '获取成功')]
+    #[Permission(code: '{{pluginKey}}:info', description: '详情权限')]
+    public function info(Request $request): Response
+    {
+        return Json::success('获取成功', []);
+    }
+
+    #[OA\Post(path: '/{{kebabPluginKey}}/update', summary: '更新', tags: ['{{pluginKey}}'])]
+    #[SimpleResponse(description: '更新成功')]
+    #[Permission(code: '{{pluginKey}}:update', description: '更新权限')]
+    public function update(Request $request): Response
+    {
+        return Json::success('更新成功');
+    }
+
+    #[OA\Post(path: '/{{kebabPluginKey}}/delete', summary: '删除', tags: ['{{pluginKey}}'])]
+    #[SimpleResponse(description: '删除成功')]
+    #[Permission(code: '{{pluginKey}}:delete', description: '删除权限')]
+    public function delete(Request $request): Response
+    {
+        return Json::success('删除成功');
+    }
+}
