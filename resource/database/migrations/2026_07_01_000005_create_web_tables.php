@@ -58,6 +58,7 @@ return new class {
                 $table->string('url', 255)->comment('链接地址');
                 $table->string('logo', 255)->nullable()->comment('链接 logo');
                 $table->string('description', 255)->nullable()->comment('链接描述');
+                $table->string('contact', 128)->nullable()->comment('联系方式（申请友链提交）');
                 $table->string('category', 32)->default('footer')->comment('链接分类');
                 $table->string('target', 10)->default('_blank')->comment('打开方式');
                 $table->tinyInteger('enabled')->default(1)->comment('状态: 1正常 0停用');
