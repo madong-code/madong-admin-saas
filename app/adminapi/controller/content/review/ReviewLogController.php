@@ -21,6 +21,7 @@ use app\adminapi\middleware\OperationMiddleware;
 use app\adminapi\middleware\PermissionMiddleware;
 use app\service\admin\content\review\log\ReviewLogService;
 use core\foundation\tool\Json;
+use madong\swagger\annotation\response\DataResponse;
 use madong\swagger\annotation\response\PageResponse;
 use madong\swagger\attribute\Permission;
 use OpenApi\Attributes as OA;

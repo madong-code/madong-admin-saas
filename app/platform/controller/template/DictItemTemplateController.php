@@ -17,6 +17,7 @@ namespace app\platform\controller\template;
 use app\platform\controller\Base;
 use app\service\platform\template\DictItemTemplateService;
 use core\foundation\tool\Json;
+use madong\swagger\annotation\response\SimpleResponse;
 use OpenApi\Attributes as OA;
 use support\annotation\Middleware;
 use support\Request;
