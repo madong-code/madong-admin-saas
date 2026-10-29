@@ -47,8 +47,10 @@ final class MenuTemplateController extends Base
     public function list(Request $request): \support\Response
     {
         try {
-            $app = $request->input('app', 'admin');
-            $data = $this->service->getList($app);
+            // 解析搜索参数（EQ_/LIKE_ 前缀等），app 区分租户模板与平台菜单
+            [$where] = $this->selectInput($request);
+            $app     = (string)($request->input('app') ?: 'admin');
+            $data    = $this->service->getList($where, $app);
             return Json::success('ok', $data);
         } catch (\Throwable $e) { return Json::fail($e->getMessage()); }
     }

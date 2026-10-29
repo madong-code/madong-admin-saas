@@ -46,10 +46,15 @@ class MenuTemplateService extends BaseService
 
     /**
      * 获取扁平列表
+     *
+     * @param array  $where Crud selectInput 解析出的查询条件
+     * @param string $app   菜单归属：admin=租户模板，platform=平台菜单
      */
-    public function getList(string $app = 'admin'): array
+    public function getList(array $where = [], string $app = 'admin'): array
     {
-        return $this->dao->selectList(['app' => $app])->toArray();
+        // Crud 流程默认 filter_format=keyvalue（field => 'op:value'），追加条件需保持同一格式
+        $where['filters'] = array_merge($where['filters'] ?? [], ['app' => 'eq:' . $app]);
+        return $this->dao->selectList($where)->toArray();
     }
 
     /**
