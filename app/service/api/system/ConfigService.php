@@ -49,8 +49,8 @@ class ConfigService extends BaseService
             $map['group_code'] = $primaryGroup;
         }
 
-        // 查询配置
-        $configModel = $this->dao->get($map, ['*'], [], '', [AccessPermissionScope::class]);
+        // 查询配置（id asc 确定性排序：sys_config 存在历史重复行时保证读取稳定，杜绝随机覆盖）
+        $configModel = $this->dao->get($map, ['*'], [], 'id asc', [AccessPermissionScope::class]);
 
         // 主分组未找到且配置了 fallback 分组，逐个回退查找
         if (!$configModel && !empty($fallbackGroups) && is_array($fallbackGroups)) {
@@ -60,7 +60,7 @@ class ConfigService extends BaseService
                 }
                 $configModel = $this->dao->get(
                     ['code' => $code, 'group_code' => $fbGroup],
-                    ['*'], [], '', [AccessPermissionScope::class]
+                    ['*'], [], 'id asc', [AccessPermissionScope::class]
                 );
                 if ($configModel) {
                     break;
@@ -70,26 +70,33 @@ class ConfigService extends BaseService
 
         // 如果配置不存在，自动创建到主分组或 default
         if (!$configModel) {
-            $targetGroup = $primaryGroup ?: 'default';
-            $configData = [
-                'code' => $code,
-                'name' => $options['name'] ?? $code,
-                'group_code' => $targetGroup,
-                'content' => is_array($default) ? json_encode($default, JSON_UNESCAPED_UNICODE) : $default,
-                'type' => $options['type'] ?? (is_array($default) ? 'json' : 'string'),
-                'enabled' => 1,
-                'sort' => 0,
-                'remark' => $options['remark'] ?? '',
-            ];
+            // 自动创建前复核一次（剥离数据权限 Scope 精确查重），防止 Scope 过滤
+            // 误判缺失导致同一 group+code 重复插行（历史事故：sys_config 成批重复行）
+            $recheck = $this->dao->get(['code' => $code] + ($primaryGroup ? ['group_code' => $primaryGroup] : []));
+            if ($recheck) {
+                $configModel = $recheck;
+            } else {
+                $targetGroup = $primaryGroup ?: 'default';
+                $configData  = [
+                    'code' => $code,
+                    'name' => $options['name'] ?? $code,
+                    'group_code' => $targetGroup,
+                    'content' => is_array($default) ? json_encode($default, JSON_UNESCAPED_UNICODE) : $default,
+                    'type' => $options['type'] ?? (is_array($default) ? 'json' : 'string'),
+                    'enabled' => 1,
+                    'sort' => 0,
+                    'remark' => $options['remark'] ?? '',
+                ];
 
-            try {
-                $this->dao->save($configData);
-            } catch (\Exception $e) {
+                try {
+                    $this->dao->save($configData);
+                } catch (\Exception $e) {
+                }
+
+                return !empty($options['with_upload_info']) && is_array($default)
+                    ? $this->appendUploadInfo($default)
+                    : $default;
             }
-
-            return !empty($options['with_upload_info']) && is_array($default)
-                ? $this->appendUploadInfo($default)
-                : $default;
         }
 
         $content = $configModel->getOriginal('content',null);
