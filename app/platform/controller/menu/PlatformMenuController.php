@@ -66,7 +66,9 @@ final class PlatformMenuController extends Base
     public function list(Request $request): \support\Response
     {
         try {
-            $data = $this->service->getList();
+            // 解析搜索参数（EQ_/LIKE_ 前缀等），由服务层追加 app=platform 过滤
+            [$where] = $this->selectInput($request);
+            $data    = $this->service->getList($where);
             return Json::success('ok', $data);
         } catch (\Throwable $e) {
             return Json::fail($e->getMessage());
