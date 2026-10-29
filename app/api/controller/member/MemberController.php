@@ -21,6 +21,7 @@ use app\service\api\member\MemberBindService;
 use app\service\api\member\MemberService;
 use core\foundation\exception\handler\UnauthorizedHttpException;
 use core\foundation\tool\Json;
+use core\infrastructure\logger\Logger;
 use madong\swagger\annotation\response\SimpleResponse;
 use madong\swagger\attribute\AllowAnonymous;
 use OpenApi\Attributes as OA;
@@ -83,8 +84,15 @@ final class MemberController extends Base
             }
 
             return Json::success('ok', $data);
-        } catch (\Throwable $e) {
+        } catch (UnauthorizedHttpException $e) {
+            // 凭证缺失/无效：明确的鉴权失败，保持 401 语义
             return Json::fail($e->getMessage(), null, 401);
+        } catch (\Throwable $e) {
+            // 非鉴权异常（DB/缓存/事件等）：记录日志便于排查，避免一切异常被静默吞成 401
+            Logger::error('member/user-info 失败: ' . $e->getMessage(), [
+                'file' => $e->getFile() . ':' . $e->getLine(),
+            ]);
+            return Json::fail('获取会员信息失败，请稍后重试', null, 500);
         }
     }
 
@@ -116,11 +124,20 @@ final class MemberController extends Base
         try {
             $data = $request->all();
             $this->service->updateInfo($data);
-            return Json::success();
-        } catch (\Exception $exception) {
-            return Json::fail($exception->getMessage());
+            return Json::success('保存成功');
+        } catch (\Throwable $exception) {
+            // 任何异常（业务校验/DB 约束/序列化）都必须回 JSON 错误，
+            // 严禁静默返回成功，保证前端"提示"与"实际入库"一致
+            Logger::error(
+                'member/user/update 失败: ' . $exception->getMessage(),
+                ['uid' => (string)(Container::make(CurrentMember::class)->id()), 'trace' => $exception->getFile() . ':' . $exception->getLine()]
+            );
+            $code = (int)$exception->getCode();
+            if ($code < 400 || $code > 599) {
+                $code = -1;
+            }
+            return Json::fail($exception->getMessage() ?: '保存失败', null, $code);
         }
-
     }
 
     #[OA\Post(
