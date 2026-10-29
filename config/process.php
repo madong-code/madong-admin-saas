@@ -21,7 +21,7 @@ return [
     'webman'            => [
         'handler'     => Http::class,
         'listen'      => 'http://0.0.0.0:8500',
-        'count'       => cpu_count() * 4,
+        'count'       => 4,
         'user'        => '',
         'group'       => '',
         'reusePort'   => false,
