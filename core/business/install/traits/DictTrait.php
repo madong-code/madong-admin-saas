@@ -113,7 +113,7 @@ trait DictTrait
 
             $this->insert($dictTable, [
                 'id'          => $dictId,
-                'group_code'  => $dict['group'] ?? 'system',
+                'group_code'  => $dict['group_code'] ?? 'default',
                 'code'        => $dict['code'] ?? '',
                 'name'        => $dict['name'] ?? '',
                 'sort'        => $dict['sort'] ?? 0,
@@ -131,7 +131,7 @@ trait DictTrait
                     $this->insert($dictItemTable, [
                         'id'         => Snowflake::generate(),
                         'dict_id'    => $dictId,
-                        'code'       => $dict['code'] ?? '',
+                        'code'       => $item['code'] ?? '',
                         'value'      => $item['value'] ?? '',
                         'label'      => $item['label'] ?? '',
                         'color'      => $item['color'] ?? '',
@@ -157,7 +157,7 @@ trait DictTrait
         $data = [
             'id'          => $id,
             'app'         => $app,
-            'group_code'  => $dict['group'] ?? 'system',
+            'group_code'  => $dict['group_code'] ?? 'default',
             'code'        => $dict['code'] ?? '',
             'name'        => $dict['name'] ?? '',
             'sort'        => $dict['sort'] ?? 0,
@@ -177,7 +177,7 @@ trait DictTrait
                 $this->insert($itemTableName, [
                     'id'              => Snowflake::generate(),
                     'dict_template_id' => $id,
-                    'code'             => $dict['code'] ?? '',
+                    'code'             => $item['code'] ?? '',
                     'value'            => $item['value'] ?? '',
                     'label'            => $item['label'] ?? '',
                     'color'            => $item['color'] ?? '',

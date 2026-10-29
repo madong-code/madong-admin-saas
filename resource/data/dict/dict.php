@@ -23,8 +23,9 @@ return [
         'updated_by'  => 1,
         'items'       => [
             [
+                // value 必须与字典 group_code 实际取值一致（system.DictGroupCode 同源）
                 'label'      => '默认分组',
-                'value'      => 'value1',
+                'value'      => 'default',
                 'code'       => 'default',
                 'sort'       => 1,
                 'enabled'    => 1,
@@ -33,8 +34,8 @@ return [
                 'remark'     => '',
             ],
             [
-                'label'      => '其他',
-                'value'      => 'value2',
+                'label'      => '其他分组',
+                'value'      => 'other',
                 'code'       => 'other',
                 'sort'       => 2,
                 'enabled'    => 1,
