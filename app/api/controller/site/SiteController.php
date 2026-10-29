@@ -50,30 +50,39 @@ final class SiteController extends Base
     }
 
     #[OA\Get(
-        path: '/site/routing-config',
-        summary: '获取路由菜单模式配置',
+        path: '/site/nav-config',
+        summary: '获取站点导航配置（登录态无关，全量输出；is_public 显隐由前端按登录态过滤）',
         tags: ['站点模块'],
         responses: [
             new OA\Response(response: 200, description: '获取成功'),
         ]
     )]
     #[SimpleResponse(schema: [], example: [
-        'routing_mode'    => 'hybrid',
-        'menus'           => [
-            ['id' => 1, 'name' => '关于我们', 'category' => 1, 'pid' => 0, 'url' => '/page/about', 'icon' => ''],
-            ['id' => 2, 'name' => '我的帖子', 'category' => 2, 'pid' => 0, 'url' => '/member/post', 'icon' => ''],
+        'routing_mode'  => 'hybrid',
+        'max_nav_items' => 6,
+        'codes'         => ['page.about'],
+        'menus'         => [
+            [
+                'name'          => '关于我们',
+                'url'           => '/page/about',
+                'external'      => false,
+                'active_prefix' => ['/page/about'],
+                'icon'          => '',
+                'is_public'     => true,
+                'is_no_auth'    => false,
+                'code'          => '',
+                'children'      => [],
+            ],
         ],
-        'menu_visibility' => [
-            '/page/example' => ['visible' => false],
-            '/member/vip'   => ['permissions' => ['vip']],
-        ],
-        'max_nav_items'   => 6,
+        'member_menus'   => [],
+        'header_actions' => [],
+        'footer_menus'   => [],
     ])]
     #[AllowAnonymous(requireToken: false, requirePermission: false, description: '公共接口')]
-    public function getRoutingConfig(): Response
+    public function getNavConfig(): Response
     {
         try {
-            $result = $this->service->getRoutingConfig();
+            $result = $this->service->getNavConfig();
             return Json::success('获取成功', $result);
         } catch (\Exception $e) {
             return Json::fail($e->getMessage());

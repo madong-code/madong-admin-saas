@@ -43,6 +43,7 @@ class Link extends BaseModel
         'url',
         'logo',
         'description',
+        'contact',
         'category',
         'sort',
         'target',

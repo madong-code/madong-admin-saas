@@ -54,7 +54,9 @@ class MenuService extends BaseService
 
         // 获取当前用户权限码
         $userPermissions = $this->getUserPermissions();
-        $isLogin         = !empty($userPermissions);
+        // 登录判定以会员身份为准：普通会员可能无任何标签权限码，
+        // 仅凭权限码非空判定会把已登录普通会员误判为游客（导致 is_public=0 菜单全部不可见）
+        $isLogin = $this->isMemberLogin();
 
         // 根据权限过滤菜单
         // 逻辑：
@@ -93,6 +95,37 @@ class MenuService extends BaseService
 
         // 解析 extra 扩展字段
         return $this->parseExtra($filteredMenus);
+    }
+
+    /**
+     * 获取导航菜单全量列表（登录态无关，不做权限/登录过滤）
+     *
+     * 供 /site/nav-config 整体输出：is_public/is_no_auth/code 作为节点字段随树下发，
+     * 显隐由前端按登录态响应式过滤（页面保护由路由 auth 中间件负责）。
+     */
+    public function getNavigationAllList(): array
+    {
+        $map   = [
+            ['enabled', 'eq', EnabledStatus::ENABLED->value],
+            ['is_show', 'eq', 1],
+        ];
+        $menus = $this->dao->selectList($map, ['*'], 0, 0, 'sort asc, id asc');
+
+        return $this->parseExtra($menus->toArray());
+    }
+
+    /**
+     * 当前请求是否携带有效会员身份（token 可解析出会员 uid）
+     */
+    private function isMemberLogin(): bool
+    {
+        try {
+            /** @var CurrentMember $currentMember */
+            $currentMember = Container::make(CurrentMember::class);
+            return !empty($currentMember->id());
+        } catch (\Exception) {
+            return false;
+        }
     }
 
     /**

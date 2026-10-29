@@ -92,4 +92,37 @@ final class LinkController extends Base
             return Json::fail($e->getMessage());
         }
     }
+
+    /**
+     * 页脚申请友链（落库为待审核，后台「网站设置→友情链接」启用后前台展示）
+     */
+    #[OA\Post(
+        path: '/site/link/apply',
+        summary: '申请友情链接（页脚，待审核）',
+        tags: ['友情链接模块'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'name', type: 'string', example: '示例站点'),
+                new OA\Property(property: 'url', type: 'string', example: 'https://example.com'),
+                new OA\Property(property: 'logo', type: 'string', example: ''),
+                new OA\Property(property: 'description', type: 'string', example: ''),
+                new OA\Property(property: 'contact', type: 'string', example: '邮箱 / QQ / 微信'),
+            ])
+        ),
+        responses: [
+            new OA\Response(response: 200, description: '提交成功'),
+        ]
+    )]
+    #[SimpleResponse(schema: [], example: [])]
+    #[AllowAnonymous(requireToken: false, requirePermission: false, description: '公共接口')]
+    public function apply(Request $request): Response
+    {
+        try {
+            $this->service->apply((array) $request->post());
+            return Json::success('申请成功，等待审核');
+        } catch (\Exception $e) {
+            return Json::fail($e->getMessage());
+        }
+    }
 }

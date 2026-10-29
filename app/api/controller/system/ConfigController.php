@@ -68,7 +68,8 @@ final class ConfigController extends Base
             }
             // 站点配置：追加存储运行时信息（upload_mode / cdn_url / is_private / storage_prefix），
             // 前端据此决定资源地址是直接拼接还是换取签名直链
-            if ($code === 'site_setting') {
+            // site_setting=ERP 后台自身；web_site_setting=web 前台门户（web 端 stores/config.ts 消费）
+            if (in_array($code, ['site_setting', 'web_site_setting'], true)) {
                 $options['with_upload_info'] = true;
             }
             $result = $this->service->config($code, [], $options);

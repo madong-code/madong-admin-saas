@@ -13,6 +13,7 @@ declare(strict_types=1);
  */
 namespace app\service\api\site;
 
+use app\event\site\SiteNavConfigEvent;
 use app\service\api\system\ConfigService;
 use core\foundation\base\BaseService;
 
@@ -52,13 +53,15 @@ class SiteService extends BaseService
     }
 
     /**
-     * 获取路由菜单模式配置
+     * 获取站点导航配置（登录态无关，整体输出）
      * - routing_mode: 运行期路由模式（frontend/backend/hybrid），覆盖构建期默认值
-     * - menus: backend/hybrid 模式下的后端菜单数据（按 category 分组为 nav + member）
      * - menu_visibility: 前端模式下按 path 下发菜单可见性与权限
      * - max_nav_items: PC 导航栏固定显示数量
+     * - codes: 全部菜单权限码集合（backend/hybrid 模式校验非公开路由有效性）
+     * - menus/member_menus/header_actions/footer_menus: category=1/2/3/4 全量树，
+     *   节点带 is_public（显隐语义，非权限语义）/is_no_auth/code，由前端按登录态过滤
      */
-    public function getRoutingConfig(): array
+    public function getNavConfig(): array
     {
         $routingMode    = $this->configService->config('routing_mode', '', ['group_code' => 'web']);
         $menuVisibility = $this->configService->config('menu_visibility', [], ['group_code' => 'web']);
@@ -75,13 +78,66 @@ class SiteService extends BaseService
             $result['max_nav_items'] = (int)$maxNavItems;
         }
 
-        // 始终返回后端定义的菜单，前端按 category 分组使用
         try {
-            $result['menus'] = $this->menuService->getNavigationList();
-        } catch (\Exception $e) {
-            $result['menus'] = [];
+            $all = $this->menuService->getNavigationAllList();
+        } catch (\Exception) {
+            $all = [];
         }
 
+        $groups = ['1' => [], '2' => [], '3' => [], '4' => []];
+        $codes  = [];
+        foreach ($all as $menu) {
+            $category = (string)($menu['category'] ?? '');
+            if (!isset($groups[$category])) {
+                continue;
+            }
+            $groups[$category][] = $menu;
+            $code = (string)($menu['code'] ?? '');
+            if ($code !== '' && !in_array($code, $codes, true)) {
+                $codes[] = $code;
+            }
+        }
+
+        $result['codes']          = $codes;
+        $result['menus']          = $this->buildNavTree($groups['1'], '0');
+        $result['member_menus']   = $this->buildNavTree($groups['2'], '0');
+        $result['header_actions'] = $this->buildNavTree($groups['3'], '0');
+        $result['footer_menus']   = $this->buildNavTree($groups['4'], '0');
+
+        // 插件注入/改写导航节点（portal：系统栏目 active_prefix 正身/详情域联动高亮）
+        $event = new SiteNavConfigEvent($result['menus'], $result['member_menus']);
+        $event->dispatch();
+        $result['menus']        = $event->menus;
+        $result['member_menus'] = $event->memberMenus;
+
         return $result;
+    }
+
+    /**
+     * web_menu 平铺行 → 导航树（pid 组树 + external/active_prefix/icon/is_public 映射）
+     * active_prefix 默认降级为 [url] 自身前缀，插件监听器可按系统栏目改写
+     */
+    private function buildNavTree(array $rows, string $pid): array
+    {
+        $out = [];
+        foreach ($rows as $row) {
+            if ((string)($row['pid'] ?? '0') !== $pid) {
+                continue;
+            }
+            $url      = (string)($row['url'] ?? '');
+            $external = (int)($row['target'] ?? 1) === 2 || (bool)preg_match('#^https?://#i', $url);
+            $out[]    = [
+                'name'          => (string)($row['name'] ?? ''),
+                'url'           => $url,
+                'external'      => $external,
+                'active_prefix' => ($external || $url === '') ? [] : [$url],
+                'icon'          => (string)($row['icon'] ?? ''),
+                'is_public'     => !empty($row['is_public']) && $row['is_public'] != 0,
+                'is_no_auth'    => !empty($row['is_no_auth']) && $row['is_no_auth'] != 0,
+                'code'          => (string)($row['code'] ?? ''),
+                'children'      => $this->buildNavTree($rows, (string)($row['id'] ?? '0')),
+            ];
+        }
+        return $out;
     }
 }
