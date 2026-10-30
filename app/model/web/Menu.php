@@ -87,6 +87,12 @@ class Menu extends BaseModel
         'id'        => 'string',
         'pid'       => 'string',
         'tenant_id' => 'string',
+        // 以下字段均为枚举字典驱动，统一为整型，避免与字典项（int）类型不一致
+        'category'  => 'integer',
+        'type'      => 'integer',
+        'target'    => 'integer',
+        'is_show'   => 'integer',
+        'enabled'   => 'integer',
     ];
 
     /**
