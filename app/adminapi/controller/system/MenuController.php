@@ -23,10 +23,12 @@ use app\adminapi\schema\request\system\MenuFormRequest;
 use app\adminapi\schema\request\system\MenuQueryRequest;
 use app\adminapi\schema\response\system\MenuResponse;
 use app\adminapi\validate\system\menu\MenuValidate;
+use app\dao\plugin\TenantPluginDao;
 use app\schema\request\BatchDeleteRequest;
 use app\scope\global\AccessPermissionScope;
 use app\service\admin\system\menu\MenuService;
 use app\service\core\plugin\PluginService;
+use core\business\tenant\context\TenantContext;
 use core\foundation\exception\handler\AdminException;
 use core\foundation\tool\Json;
 use madong\helper\Arr;
@@ -205,29 +207,76 @@ final class MenuController extends Crud
         path: '/system/menu/app/list',
         summary: '获取应用列表',
         tags: ['菜单管理'],
+        parameters: [
+            new OA\Parameter(name: 'end', description: '端别限定: admin=后台(默认)/web=前台, 系统应用选项值随之切换', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['admin', 'web'])),
+        ],
     )]
     #[Permission(code: 'system:menu:app_list')]
     #[SimpleResponse(schema: [], example: [])]
     public function appList(Request $request): \support\Response
     {
         try {
-            /**@var PluginService $service */
-            $service = Container::make(PluginService::class);
-            $model   = $service->selectList([], '*', 0, 0, '', [], false, [AccessPermissionScope::class]);
-            return $this->formatAppSelect($model);
+            // 端别限定: admin=后台(默认)/web=前台, 决定「系统应用」选项的 value 语义
+            // 后台菜单(sys_menu)系统应用 value=admin, 前台菜单(web_menu)预置数据 value=web
+            $end = $request->input('end', 'admin');
+            if (!in_array($end, ['admin', 'web'], true)) {
+                $end = 'admin';
+            }
+
+            if (TenantContext::isSingleMode()) {
+                // 单体模式：直接读取平台插件注册表 sys_plugin
+                /**@var PluginService $service */
+                $service = Container::make(PluginService::class);
+                $model   = $service->selectList([], '*', 0, 0, '', [], false, [AccessPermissionScope::class]);
+                return $this->formatAppSelect($model, $end);
+            }
+
+            // 租户模式：读取当前租户已安装且启用的插件（运行态表 saas_tenant_plugin_install）
+            /**@var TenantPluginDao $tenantPluginDao */
+            $tenantPluginDao = Container::make(TenantPluginDao::class);
+            $installs        = $tenantPluginDao->getActivePluginsByTenant(TenantContext::getTenantId());
+            return $this->formatTenantAppSelect($installs, $end);
         } catch (\Exception $e) {
             return Json::fail('获取应用列表失败', []);
         }
     }
 
-    private function formatAppSelect($items): \support\Response
+    private function formatAppSelect($items, string $end = 'admin'): \support\Response
     {
         $formatted_items   = [];
-        $formatted_items[] = ['label' => '系统应用', 'value' => 'admin'];
+        $formatted_items[] = ['label' => '系统应用', 'value' => $end];
         foreach ($items as $item) {
             $formatted_items[] = [
                 'label' => $item->title ?? $item->name ?? $item->real_name ?? $item->id,
                 'value' => $item->id,
+            ];
+        }
+        return Json::success('ok', $formatted_items);
+    }
+
+    private function formatTenantAppSelect(array $installs, string $end = 'admin'): \support\Response
+    {
+        $formatted_items   = [];
+        $formatted_items[] = ['label' => '系统应用', 'value' => $end];
+        if (empty($installs)) {
+            return Json::success('ok', $formatted_items);
+        }
+        // label 用插件注册表标题美化; value 用 plugin_key, 与 web_menu.app 的字符串语义一致
+        $keys = array_values(array_unique(array_column($installs, 'plugin_key')));
+        /**@var PluginService $service */
+        $service  = Container::make(PluginService::class);
+        $plugins  = $service->selectList([], '*', 0, 0, '', [], false);
+        $titleMap = [];
+        foreach ($plugins as $plugin) {
+            if (in_array($plugin->key, $keys, true)) {
+                $titleMap[$plugin->key] = $plugin->title;
+            }
+        }
+        foreach ($installs as $install) {
+            $key               = $install['plugin_key'];
+            $formatted_items[] = [
+                'label' => $titleMap[$key] ?? $key,
+                'value' => $key,
             ];
         }
         return Json::success('ok', $formatted_items);
