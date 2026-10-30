@@ -45,7 +45,7 @@ final class SiteConfigController
     {
         try {
             return Json::success('获取成功', $this->service->get());
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return Json::fail($e->getMessage());
         }
     }
@@ -81,7 +81,7 @@ final class SiteConfigController
         try {
             $data = $this->service->save((array) $request->post());
             return Json::success('操作成功', $data);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return Json::fail($e->getMessage());
         }
     }
