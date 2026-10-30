@@ -1,9 +1,8 @@
 <script lang="ts" setup>
-import { Tippy } from '@vben/common-ui';
-
 import { ElButton, ElCard } from 'element-plus';
 
 import { Page } from '#/components/page';
+import { Tippy } from '#/core/ui/common';
 </script>
 
 <template>

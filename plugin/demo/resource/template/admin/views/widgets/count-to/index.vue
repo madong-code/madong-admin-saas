@@ -1,9 +1,8 @@
 <script lang="ts" setup>
-import { CountTo } from '@vben/common-ui';
-
 import { ElCard } from 'element-plus';
 
 import { Page } from '#/components/page';
+import { CountTo } from '#/core/ui/common';
 </script>
 
 <template>

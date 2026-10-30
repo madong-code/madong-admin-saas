@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { VBEN_DOC_URL } from '@vben/constants';
-import { openWindow } from '@vben/utils';
-
 import { ElButton } from 'element-plus';
+
+import { openWindow } from '#/core/shared';
+import { VBEN_DOC_URL } from '#/core/shared/constants';
 
 defineProps<{ path?: string }>();
 </script>

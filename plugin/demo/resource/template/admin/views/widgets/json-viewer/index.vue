@@ -1,9 +1,8 @@
 <script lang="ts" setup>
-import { JsonViewer } from '@vben/common-ui';
-
 import { ElCard, ElMessage } from 'element-plus';
 
 import { Page } from '#/components/page';
+import { JsonViewer } from '#/core/ui/common';
 
 const json1 = {
   additionalInfo: {

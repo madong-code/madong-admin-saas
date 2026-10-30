@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 
-import { useI18n } from '@vben/locales';
-
+import { useI18n } from '#/core/locales';
 import { $t } from '#/locales';
 
 const { locale, mergeLocaleMessage } = useI18n();
@@ -19,12 +18,12 @@ function testTranslation() {
     $t('demo.widgets.locale.test.welcome'),
   );
   console.warn(
-    'demo.widgets.locale.test.menuHome:',
-    $t('demo.widgets.locale.test.menuHome'),
+    'demo.widgets.locale.test.menu_home:',
+    $t('demo.widgets.locale.test.menu_home'),
   );
   console.warn(
-    'demo.widgets.locale.test.menuSettings:',
-    $t('demo.widgets.locale.test.menuSettings'),
+    'demo.widgets.locale.test.menu_settings:',
+    $t('demo.widgets.locale.test.menu_settings'),
   );
 }
 
@@ -43,25 +42,6 @@ async function reloadLocaleForLang(lang: string) {
     console.error('加载语言包失败:', error);
   }
 }
-
-onMounted(async () => {
-  const staticMessages = {
-    demo: {
-      locale: {
-        test: {
-          greeting: '你好！欢迎使用插件语言包测试',
-          welcome: '欢迎来到后端模式路由测试',
-          menuHome: '首页',
-          menuSettings: '设置',
-        },
-      },
-    },
-  };
-  mergeLocaleMessage(currentLocale.value, staticMessages);
-  if (currentLocale.value !== 'zh-CN') {
-    mergeLocaleMessage('zh-CN', staticMessages);
-  }
-});
 
 async function reloadLocale() {
   try {
@@ -91,7 +71,7 @@ async function reloadLocale() {
       </div>
 
       <div class="test-section">
-        <h2>{{ $t('demo.widgets.locale.test.pluginLocaleTest') }}</h2>
+        <h2>{{ $t('demo.widgets.locale.test.plugin_locale_test') }}</h2>
         <div class="test-grid">
           <div class="test-card">
             <div class="card-label">demo.widgets.locale.test.greeting</div>
@@ -106,22 +86,22 @@ async function reloadLocale() {
             </div>
           </div>
           <div class="test-card">
-            <div class="card-label">demo.widgets.locale.test.menuHome</div>
+            <div class="card-label">demo.widgets.locale.test.menu_home</div>
             <div class="card-value">
-              {{ $t('demo.widgets.locale.test.menuHome') }}
+              {{ $t('demo.widgets.locale.test.menu_home') }}
             </div>
           </div>
           <div class="test-card">
-            <div class="card-label">demo.widgets.locale.test.menuSettings</div>
+            <div class="card-label">demo.widgets.locale.test.menu_settings</div>
             <div class="card-value">
-              {{ $t('demo.widgets.locale.test.menuSettings') }}
+              {{ $t('demo.widgets.locale.test.menu_settings') }}
             </div>
           </div>
         </div>
       </div>
 
       <div class="test-section">
-        <h2>{{ $t('demo.widgets.locale.test.frameworkLocaleTest') }}</h2>
+        <h2>{{ $t('demo.widgets.locale.test.framework_locale_test') }}</h2>
         <div class="test-grid">
           <div class="test-card">
             <div class="card-label">common.confirm</div>
@@ -135,17 +115,19 @@ async function reloadLocale() {
       </div>
 
       <div class="test-section">
-        <h2>{{ $t('demo.widgets.locale.test.currentLocale') }}</h2>
+        <h2>{{ $t('demo.widgets.locale.test.current_locale') }}</h2>
         <div class="locale-info">
           <div class="info-row">
-            <span class="info-label">{{ $t('demo.widgets.locale.test.currentLang') }}:</span>
+            <span class="info-label"
+              >{{ $t('demo.widgets.locale.test.current_lang') }}:</span
+            >
             <span class="info-value">{{ currentLocale }}</span>
           </div>
         </div>
       </div>
 
       <div class="test-section">
-        <h2>{{ $t('demo.widgets.locale.test.switchLanguage') }}</h2>
+        <h2>{{ $t('demo.widgets.locale.test.switch_language') }}</h2>
         <div class="lang-buttons">
           <button
             class="lang-btn"
@@ -175,7 +157,7 @@ async function reloadLocale() {
 .locale-backend-test {
   min-height: 100vh;
   padding: 24px;
-  background: #f5f7fa;
+  background: var(--el-fill-color-lighter);
 }
 
 .test-container {
@@ -220,14 +202,14 @@ async function reloadLocale() {
 .test-section {
   padding: 20px;
   margin-bottom: 24px;
-  background: white;
+  background: var(--el-bg-color-overlay);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
 
   h2 {
     margin: 0 0 16px;
     font-size: 18px;
-    color: #1f2937;
+    color: var(--el-text-color-primary);
   }
 }
 
@@ -239,26 +221,26 @@ async function reloadLocale() {
 
 .test-card {
   padding: 16px;
-  background: #f9fafb;
+  background: var(--el-fill-color-light);
   border-left: 4px solid #667eea;
   border-radius: 8px;
 
   .card-label {
     margin-bottom: 8px;
     font-size: 14px;
-    color: #6b7280;
+    color: var(--el-text-color-regular);
   }
 
   .card-value {
     font-size: 16px;
     font-weight: 600;
-    color: #1f2937;
+    color: var(--el-text-color-primary);
   }
 }
 
 .locale-info {
   padding: 16px;
-  background: #eff6ff;
+  background: var(--el-color-primary-light-9);
   border-radius: 8px;
 }
 
@@ -269,14 +251,14 @@ async function reloadLocale() {
 
   .info-label {
     font-weight: 500;
-    color: #6b7280;
+    color: var(--el-text-color-regular);
   }
 
   .info-value {
     padding: 4px 12px;
     font-weight: 600;
     color: #3b82f6;
-    background: white;
+    background: var(--el-bg-color-overlay);
     border-radius: 4px;
   }
 }
@@ -290,8 +272,8 @@ async function reloadLocale() {
   padding: 12px 28px;
   font-size: 15px;
   cursor: pointer;
-  background: white;
-  border: 2px solid #e5e7eb;
+  background: var(--el-bg-color-overlay);
+  border: 2px solid var(--el-border-color);
   border-radius: 8px;
   transition: all 0.2s ease;
 

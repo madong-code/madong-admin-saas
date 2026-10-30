@@ -1,0 +1,14 @@
+{
+  "menu": "流程设计器",
+  "title": "visual-flow 可视化流程设计器",
+  "desc": "基于 Vue 3 + Vite + LogicFlow 的可视化流程设计器，为 ingenious 工作流而设计，交互更佳圆润",
+  "canvas_mode": "画布模式",
+  "dingtalk_mode": "钉钉模式",
+  "viewer_on": "查看模式",
+  "viewer_off": "编辑模式",
+  "toggle_viewer": "切换编辑/预览",
+  "reset": "重置数据",
+  "event_log": "事件日志（实时）",
+  "clear": "清空",
+  "no_log": "暂无日志，操作画布后自动记录"
+}

@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 
-import { useVbenModal } from '@vben/common-ui';
-
 import { ElInput, ElMessage } from 'element-plus';
+
+import { useVbenModal } from '#/core/ui/common';
 
 const value = ref('');
 

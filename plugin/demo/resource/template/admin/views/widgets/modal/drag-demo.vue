@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { useVbenModal } from '@vben/common-ui';
-
 import { ElMessage } from 'element-plus';
+
+import { useVbenModal } from '#/core/ui/common';
 
 const [Modal, modalApi] = useVbenModal({
   draggable: true,

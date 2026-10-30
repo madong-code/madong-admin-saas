@@ -1,11 +1,10 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 
-import { useVbenDrawer } from '@vben/common-ui';
-
 import { ElInput, ElMessage } from 'element-plus';
 
 import { useVbenForm } from '#/adapter/form';
+import { useVbenDrawer } from '#/core/ui/common';
 
 const value = ref('');
 

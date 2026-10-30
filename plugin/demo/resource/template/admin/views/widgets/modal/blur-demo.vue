@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { ref, watch } from 'vue';
 
-import { useVbenModal } from '@vben/common-ui';
-
 import { ElSlider } from 'element-plus';
+
+import { useVbenModal } from '#/core/ui/common';
 
 const blur = ref(5);
 const [Modal, modalApi] = useVbenModal({

@@ -1,9 +1,8 @@
 <script lang="ts" setup>
-import { useVbenModal } from '@vben/common-ui';
-
 import { ElMessage } from 'element-plus';
 
 import { useVbenForm } from '#/adapter/form';
+import { useVbenModal } from '#/core/ui/common';
 
 defineOptions({ name: 'FormModalDemo' });
 

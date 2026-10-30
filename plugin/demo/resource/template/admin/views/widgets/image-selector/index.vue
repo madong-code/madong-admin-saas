@@ -25,7 +25,9 @@ const disabledValue = ref('/upload/default-avatar.webp');
     <!-- 1. 单选模式 -->
     <ElCard class="mb-4" shadow="never">
       <template #header>
-        <span class="font-medium">1. {{ $t('demo.widgets.image-selector.single_mode') }}</span>
+        <span class="font-medium"
+          >1. {{ $t('demo.widgets.image-selector.single_mode') }}</span
+        >
       </template>
       <div class="flex items-center gap-5">
         <ImageSelector
@@ -52,7 +54,9 @@ const disabledValue = ref('/upload/default-avatar.webp');
     <!-- 2. 多选模式 -->
     <ElCard class="mb-4" shadow="never">
       <template #header>
-        <span class="font-medium">2. {{ $t('demo.widgets.image-selector.multiple_mode') }}</span>
+        <span class="font-medium"
+          >2. {{ $t('demo.widgets.image-selector.multiple_mode') }}</span
+        >
       </template>
       <ImageSelector
         v-model="multipleValue"
@@ -85,7 +89,9 @@ const disabledValue = ref('/upload/default-avatar.webp');
     <!-- 3. 大尺寸单选（带默认值） -->
     <ElCard class="mb-4" shadow="never">
       <template #header>
-        <span class="font-medium">3. {{ $t('demo.widgets.image-selector.large_single') }}</span>
+        <span class="font-medium"
+          >3. {{ $t('demo.widgets.image-selector.large_single') }}</span
+        >
       </template>
       <div class="flex items-center gap-5">
         <ImageSelector
@@ -115,7 +121,9 @@ const disabledValue = ref('/upload/default-avatar.webp');
     <!-- 4. 禁用状态 -->
     <ElCard class="mb-4" shadow="never">
       <template #header>
-        <span class="font-medium">4. {{ $t('demo.widgets.image-selector.disabled') }}</span>
+        <span class="font-medium"
+          >4. {{ $t('demo.widgets.image-selector.disabled') }}</span
+        >
       </template>
       <ImageSelector
         v-model="disabledValue"
@@ -133,7 +141,9 @@ const disabledValue = ref('/upload/default-avatar.webp');
     <!-- 5. 代码示例 -->
     <ElCard shadow="never">
       <template #header>
-        <span class="font-medium">5. {{ $t('demo.widgets.image-selector.code_example') }}</span>
+        <span class="font-medium"
+          >5. {{ $t('demo.widgets.image-selector.code_example') }}</span
+        >
       </template>
       <ElTabs>
         <ElTabPane :label="$t('demo.widgets.image-selector.single')">

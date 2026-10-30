@@ -1,9 +1,8 @@
 <script lang="ts" setup>
-import { EllipsisText } from '@vben/common-ui';
-
 import { ElCard } from 'element-plus';
 
 import { Page } from '#/components/page';
+import { EllipsisText } from '#/core/ui/common';
 
 import DocButton from '../../doc-button.vue';
 

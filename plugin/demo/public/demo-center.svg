@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#221204"/>
+      <stop offset="0.55" stop-color="#331a08"/>
+      <stop offset="1" stop-color="#3d2408"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f59e0b" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#f59e0b" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fb923c" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#fb923c" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="barOrange" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#ea580c"/>
+      <stop offset="1" stop-color="#fdba74"/>
+    </linearGradient>
+    <linearGradient id="barAmber" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#fde68a"/>
+    </linearGradient>
+    <linearGradient id="lineStroke" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fbbf24"/>
+      <stop offset="1" stop-color="#fb923c"/>
+    </linearGradient>
+    <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f59e0b" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#f59e0b" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="cardShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <circle cx="1180" cy="230" r="420" fill="url(#glowA)"/>
+  <circle cx="330" cy="720" r="380" fill="url(#glowB)"/>
+
+  <g fill="#ffffff" opacity="0.07">
+    <circle cx="80" cy="90" r="3"/><circle cx="130" cy="90" r="3"/><circle cx="180" cy="90" r="3"/>
+    <circle cx="80" cy="140" r="3"/><circle cx="130" cy="140" r="3"/>
+    <circle cx="1430" cy="760" r="3"/><circle cx="1480" cy="760" r="3"/><circle cx="1530" cy="760" r="3"/>
+    <circle cx="1430" cy="810" r="3"/><circle cx="1480" cy="810" r="3"/>
+  </g>
+
+  <g>
+    <rect x="120" y="330" width="56" height="8" rx="4" fill="#fbbf24"/>
+    <text x="120" y="430" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" font-size="88" font-weight="bold" fill="#ffffff">示例插件</text>
+    <text x="122" y="490" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="26" fill="#d9b48a" letter-spacing="6">DEMO PLUGIN · 插件开发参考实现</text>
+    <path d="M620 310 L628 330 L648 338 L628 346 L620 366 L612 346 L592 338 L612 330 Z" fill="#fbbf24" opacity="0.8"/>
+  </g>
+
+  <g filter="url(#cardShadow)">
+    <rect x="760" y="150" width="420" height="300" rx="20" fill="#2b1a0c" stroke="#57371a" stroke-width="1.5"/>
+    <text x="800" y="205" font-family="Microsoft YaHei, sans-serif" font-size="22" fill="#f5dfc0">示例统计</text>
+    <rect x="800" y="380" width="46" height="40" rx="6" fill="url(#barAmber)"/>
+    <rect x="866" y="330" width="46" height="90" rx="6" fill="url(#barAmber)"/>
+    <rect x="932" y="290" width="46" height="130" rx="6" fill="url(#barOrange)"/>
+    <rect x="998" y="350" width="46" height="70" rx="6" fill="url(#barAmber)"/>
+    <rect x="1064" y="255" width="46" height="165" rx="6" fill="url(#barOrange)"/>
+    <line x1="800" y1="420" x2="1140" y2="420" stroke="#57371a" stroke-width="2"/>
+  </g>
+
+  <g filter="url(#cardShadow)">
+    <rect x="1080" y="470" width="400" height="280" rx="20" fill="#2b1a0c" stroke="#57371a" stroke-width="1.5"/>
+    <text x="1120" y="525" font-family="Microsoft YaHei, sans-serif" font-size="22" fill="#f5dfc0">访问趋势</text>
+    <path d="M1120 690 C1180 660, 1210 690, 1260 640 S1350 590, 1440 560" fill="none" stroke="url(#lineStroke)" stroke-width="5" stroke-linecap="round"/>
+    <path d="M1120 690 C1180 660, 1210 690, 1260 640 S1350 590, 1440 560 L1440 710 L1120 710 Z" fill="url(#areaFill)"/>
+    <circle cx="1440" cy="560" r="8" fill="#fbbf24"/>
+    <circle cx="1440" cy="560" r="16" fill="#fbbf24" opacity="0.25"/>
+  </g>
+
+  <g filter="url(#cardShadow)">
+    <rect x="640" y="500" width="340" height="250" rx="20" fill="#2b1a0c" stroke="#57371a" stroke-width="1.5"/>
+    <text x="680" y="552" font-family="Microsoft YaHei, sans-serif" font-size="22" fill="#f5dfc0">模块占比</text>
+    <g transform="translate(740 650)">
+      <circle r="62" fill="none" stroke="#57371a" stroke-width="20"/>
+      <circle r="62" fill="none" stroke="#f59e0b" stroke-width="20" stroke-dasharray="195 390" stroke-linecap="round" transform="rotate(-90)"/>
+      <circle r="62" fill="none" stroke="#fb923c" stroke-width="20" stroke-dasharray="98 390" stroke-linecap="round" transform="rotate(90)"/>
+      <circle r="62" fill="none" stroke="#f87171" stroke-width="20" stroke-dasharray="58 390" stroke-linecap="round" transform="rotate(180)"/>
+    </g>
+    <g font-family="Microsoft YaHei, sans-serif" font-size="18" fill="#d9b48a">
+      <rect x="856" y="610" width="14" height="14" rx="4" fill="#f59e0b"/>
+      <text x="880" y="623">示例列表</text>
+      <rect x="856" y="646" width="14" height="14" rx="4" fill="#fb923c"/>
+      <text x="880" y="659">表单演示</text>
+      <rect x="856" y="682" width="14" height="14" rx="4" fill="#f87171"/>
+      <text x="880" y="695">图表演示</text>
+    </g>
+  </g>
+
+  <g filter="url(#cardShadow)">
+    <rect x="150" y="610" width="310" height="185" rx="20" fill="#33200e" stroke="#57371a" stroke-width="1.5"/>
+    <path d="M277 648 C297 660, 297 700, 277 716 L259 716 C239 700, 239 660, 259 648 Z" fill="url(#barOrange)"/>
+    <circle cx="268" cy="676" r="9" fill="#fff7ed" opacity="0.9"/>
+    <path d="M259 692 L239 720 L259 714 Z" fill="#ea580c"/>
+    <path d="M277 692 L297 720 L277 714 Z" fill="#ea580c"/>
+    <path d="M261 716 L268 744 L275 716 Z" fill="#fbbf24"/>
+    <path d="M265 716 L268 732 L272 716 Z" fill="#fff7ed"/>
+    <line x1="222" y1="756" x2="314" y2="756" stroke="#57371a" stroke-width="4" stroke-linecap="round"/>
+    <g fill="#fde68a">
+      <path d="M352 660 L357 672 L369 677 L357 682 L352 694 L347 682 L335 677 L347 672 Z"/>
+      <path d="M368 710 L372 719 L381 723 L372 727 L368 736 L364 727 L355 723 L364 719 Z" opacity="0.6"/>
+    </g>
+  </g>
+
+  <g filter="url(#cardShadow)">
+    <rect x="1180" y="90" width="230" height="86" rx="16" fill="#33200e" stroke="#57371a" stroke-width="1.5"/>
+    <text x="1208" y="128" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="18" fill="#d9b48a">今日访问</text>
+    <text x="1208" y="160" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="30" font-weight="bold" fill="#fcd34d">512</text>
+  </g>
+
+  <g filter="url(#cardShadow)">
+    <rect x="560" y="220" width="190" height="70" rx="16" fill="#33200e" stroke="#57371a" stroke-width="1.5"/>
+    <circle cx="592" cy="255" r="10" fill="#4ade80"/>
+    <text x="612" y="263" font-family="Microsoft YaHei, sans-serif" font-size="20" fill="#f5dfc0">运行正常</text>
+  </g>
+
+  <g stroke="#57371a" stroke-width="2" stroke-dasharray="6 8" opacity="0.6">
+    <line x1="760" y1="450" x2="700" y2="500"/>
+    <line x1="1180" y1="450" x2="1240" y2="470"/>
+    <line x1="752" y1="255" x2="700" y2="255"/>
+  </g>
+</svg>

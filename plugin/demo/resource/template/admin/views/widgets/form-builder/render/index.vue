@@ -1,9 +1,18 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-import { useVForm } from '@madong/visual-form';
-import { ElMessage } from 'element-plus';
+import {
+  ElButton,
+  ElDialog,
+  ElMessage,
+  ElRadioButton,
+  ElRadioGroup,
+  ElTabPane,
+  ElTabs,
+  ElTag,
+} from 'element-plus';
 
+import { useVForm } from '#/core/plugins/visual-form';
 import { $t } from '#/locales';
 
 import { SAMPLE_FORM_DATA, SAMPLE_FORM_JSON } from '../builder/formSchema';
@@ -12,6 +21,7 @@ const { isReady, error } = useVForm();
 
 type FormMode = 'disabled' | 'edit' | 'readonly';
 
+const vFormRenderComponent = 'VFormRender';
 const vFormRenderRef = ref<any>(null);
 const formJson = ref<any>(null);
 const formData = ref<any>({});
@@ -54,7 +64,8 @@ function loadFormData() {
   currentMode.value = 'edit';
 }
 
-function handleModeChange(mode: FormMode) {
+function handleModeChange(mode: boolean | number | string | undefined) {
+  if (mode !== 'edit' && mode !== 'readonly' && mode !== 'disabled') return;
   if (!vFormRenderRef.value) return;
 
   const renderer = vFormRenderRef.value;
@@ -124,9 +135,9 @@ async function copyJson() {
   const data =
     activeJsonTab.value === 'formSchema'
       ? jsonData.value.formSchema
-      : (activeJsonTab.value === 'formData'
+      : activeJsonTab.value === 'formData'
         ? jsonData.value.formData
-        : jsonData.value.optionData);
+        : jsonData.value.optionData;
   try {
     await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
     ElMessage.success('已复制到剪贴板');
@@ -178,7 +189,8 @@ async function copyJson() {
 
       <!-- 表单渲染区域 -->
       <div class="render-content">
-        <VFormRender
+        <component
+          :is="vFormRenderComponent"
           ref="vFormRenderRef"
           :form-json="formJson"
           :form-data="formData"
@@ -226,7 +238,7 @@ async function copyJson() {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #f5f5f5;
+  background: var(--el-fill-color-lighter);
 }
 
 .render-toolbar {
@@ -238,8 +250,8 @@ async function copyJson() {
   align-items: center;
   justify-content: space-between;
   padding: 8px 16px;
-  background: #fff;
-  border-bottom: 1px solid #eef2f7;
+  background: var(--el-bg-color-overlay);
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .toolbar-left {
@@ -266,8 +278,8 @@ async function copyJson() {
   padding: 8px 16px;
   font-size: 13px;
   color: var(--el-text-color-secondary);
-  background: #fafafa;
-  border-bottom: 1px solid #eef2f7;
+  background: var(--el-fill-color-light);
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .render-content {
@@ -275,7 +287,7 @@ async function copyJson() {
   padding: 16px;
   margin: 12px;
   overflow: auto;
-  background: #fff;
+  background: var(--el-bg-color-overlay);
   border-radius: 4px;
   box-shadow: 0 1px 2px rgb(0 0 0 / 6%);
 }
@@ -293,7 +305,7 @@ async function copyJson() {
   overflow: auto;
   font-size: 12px;
   line-height: 1.6;
-  background: #f5f5f5;
+  background: var(--el-fill-color-light);
   border-radius: 4px;
 }
 </style>

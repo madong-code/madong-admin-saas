@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 
-import { useVbenDrawer } from '@vben/common-ui';
-
 import { ElMessage } from 'element-plus';
+
+import { useVbenDrawer } from '#/core/ui/common';
 
 const data = ref();
 

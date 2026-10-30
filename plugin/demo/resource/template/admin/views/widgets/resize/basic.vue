@@ -1,9 +1,8 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 
-import { VResize } from '@vben/common-ui';
-
 import { Page } from '#/components/page';
+import { VResize } from '#/core/ui/common';
 
 const colorMap = ['#ef4444', '#22c55e', '#eab308', '#6b7280'];
 

@@ -96,9 +96,9 @@ const [Grid] = useVbenVxeGrid<RowType>({ gridOptions });
                 ? 'warning'
                 : 'danger'
           "
-          >
-{{ row.status }}
-</ElTag>
+        >
+          {{ row.status }}
+        </ElTag>
       </template>
       <template #action>
         <ElButton type="primary" link>编辑</ElButton>

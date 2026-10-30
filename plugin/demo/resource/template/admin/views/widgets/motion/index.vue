@@ -1,8 +1,6 @@
 <script lang="ts" setup>
 import { reactive } from 'vue';
 
-import { Motion, MotionGroup, MotionPresets } from '@vben/plugins/motion';
-
 import { refAutoReset, watchDebounced } from '@vueuse/core';
 import {
   ElButton,
@@ -17,6 +15,7 @@ import {
 } from 'element-plus';
 
 import { Page } from '#/components/page';
+import { Motion, MotionGroup, MotionPresets } from '#/core/plugins/motion';
 
 // 本例子用不到visible类型的动画
 const presets = MotionPresets.filter((v) => !v.includes('Visible'));

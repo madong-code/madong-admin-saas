@@ -1,15 +1,14 @@
 <script lang="ts" setup>
+import { ElButton, ElCard, ElMessage } from 'element-plus';
+
+import { Page } from '#/components/page';
 import {
   alert,
   clearAllAlerts,
   confirm,
   prompt,
   useVbenModal,
-} from '@vben/common-ui';
-
-import { ElButton, ElCard, ElMessage } from 'element-plus';
-
-import { Page } from '#/components/page';
+} from '#/core/ui/common';
 import { $t } from '#/locales';
 
 import DocButton from '../../doc-button.vue';

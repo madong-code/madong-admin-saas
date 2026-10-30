@@ -1,11 +1,10 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 
-import { VCropper } from '@vben/common-ui';
-
 import { ElButton, ElCard, ElOption, ElSelect } from 'element-plus';
 
 import { Page } from '#/components/page';
+import { VCropper } from '#/core/ui/common';
 
 const imageUrl = ref('');
 const aspectRatio = ref<string>('');

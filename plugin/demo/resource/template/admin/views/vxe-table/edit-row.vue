@@ -75,16 +75,16 @@ const cancelRowEvent = (_row: RowType) => {
       <template #action="{ row }">
         <template v-if="hasEditStatus(row)">
           <ElButton type="primary" link @click="saveRowEvent(row)">
-保存
-</ElButton>
+            保存
+          </ElButton>
           <ElButton type="primary" link @click="cancelRowEvent(row)">
-取消
-</ElButton>
+            取消
+          </ElButton>
         </template>
         <template v-else>
           <ElButton type="primary" link @click="editRowEvent(row)">
-编辑
-</ElButton>
+            编辑
+          </ElButton>
         </template>
       </template>
     </Grid>

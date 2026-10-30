@@ -1,0 +1,14 @@
+{
+  "menu": "Flow Designer",
+  "title": "visual-flow Visual Workflow Designer",
+  "desc": "Visual workflow designer based on Vue 3 + Vite + LogicFlow, crafted for ingenious workflows with a smoother experience",
+  "canvas_mode": "Canvas",
+  "dingtalk_mode": "DingTalk",
+  "viewer_on": "Viewer Mode",
+  "viewer_off": "Edit Mode",
+  "toggle_viewer": "Toggle Edit/Preview",
+  "reset": "Reset",
+  "event_log": "Event Log (live)",
+  "clear": "Clear",
+  "no_log": "No logs yet. Operate the canvas to start recording."
+}

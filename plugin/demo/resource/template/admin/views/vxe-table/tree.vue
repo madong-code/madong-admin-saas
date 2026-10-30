@@ -44,8 +44,8 @@ const collapseAll = () => {
     <Grid table-title="数据列表" table-title-help="提示">
       <template #toolbar-tools>
         <ElButton class="mr-2" type="primary" @click="expandAll">
-展开全部
-</ElButton>
+          展开全部
+        </ElButton>
         <ElButton type="primary" @click="collapseAll">折叠全部</ElButton>
       </template>
     </Grid>

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { useVbenModal } from '@vben/common-ui';
-
 import { ElButton } from 'element-plus';
+
+import { useVbenModal } from '#/core/ui/common';
 
 import DragDemo from './drag-demo.vue';
 

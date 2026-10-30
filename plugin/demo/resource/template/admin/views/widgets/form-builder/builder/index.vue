@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
 
-import { useVForm } from '@madong/visual-form';
-import { ElMessage } from 'element-plus';
+import { ElButton, ElDialog, ElMessage, ElTabPane, ElTabs } from 'element-plus';
 
+import { useVForm } from '#/core/plugins/visual-form';
 import { $t } from '#/locales';
 
 import { EMPTY_FORM_JSON, SAMPLE_FORM_JSON } from './formSchema';
 
 const { isReady, error } = useVForm();
 
+const vFormDesignerComponent = 'VFormDesigner';
 const vfDesignerRef = ref<any>(null);
 
 const jsonDialogVisible = ref(false);
@@ -106,17 +107,17 @@ async function copyJson() {
 
       <!-- 设计器区域 -->
       <div class="designer-wrapper">
-        <v-form-designer
+        <component
+          :is="vFormDesignerComponent"
           ref="vfDesignerRef"
           :designer-config="designerConfig"
-          :form-json="formJson"
         >
           <template #customToolButtons>
             <ElButton type="primary" link @click="getFormJson">
               查看 JSON
             </ElButton>
           </template>
-        </v-form-designer>
+        </component>
       </div>
 
       <!-- JSON 对话框 -->
@@ -154,7 +155,7 @@ async function copyJson() {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #f5f5f5;
+  background: var(--el-fill-color-lighter);
 }
 
 .builder-toolbar {
@@ -164,8 +165,8 @@ async function copyJson() {
   align-items: center;
   justify-content: space-between;
   padding: 8px 16px;
-  background: #fff;
-  border-bottom: 1px solid #eef2f7;
+  background: var(--el-bg-color-overlay);
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .toolbar-left {
@@ -197,7 +198,7 @@ async function copyJson() {
   overflow: auto;
   font-size: 12px;
   line-height: 1.6;
-  background: #f5f5f5;
+  background: var(--el-fill-color-light);
   border-radius: 4px;
 }
 </style>

@@ -1,9 +1,8 @@
 <script lang="ts" setup>
-import { useVbenDrawer } from '@vben/common-ui';
-
 import { ElButton, ElCard, ElMessage } from 'element-plus';
 
 import { Page } from '#/components/page';
+import { useVbenDrawer } from '#/core/ui/common';
 
 import DocButton from '../../doc-button.vue';
 import AutoHeightDemo from './auto-height-demo.vue';

@@ -1,18 +1,17 @@
 <script lang="ts" setup>
-import type { ImageUploadOptions } from '@vben/plugins/tiptap';
+import type { ImageUploadOptions } from '#/core/plugins/tiptap';
 
 import { ref } from 'vue';
-
-import { VbenTiptap, VbenTiptapPreview } from '@vben/plugins/tiptap';
 
 import { ElCard, ElSwitch } from 'element-plus';
 
 import { Page } from '#/components/page';
+import { VbenTiptap, VbenTiptapPreview } from '#/core/plugins/tiptap';
 
 const content = ref(`
   <h1>Vben Tiptap</h1>
   <p>这是一个富文本编辑器示例。</p>
-  <p>你可以直接在各个 app 里通过 <code>@vben/plugins/tiptap</code> 引入。</p>
+  <p>你可以直接在各个 app 里通过 <code>#/core/plugins/tiptap</code> 引入。</p>
   <blockquote>默认内置 StarterKit、Underline、TextAlign、Placeholder。</blockquote>
 `);
 
