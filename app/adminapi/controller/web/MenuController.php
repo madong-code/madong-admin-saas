@@ -19,6 +19,7 @@ use app\adminapi\middleware\AccessTokenMiddleware;
 use app\adminapi\middleware\OperationMiddleware;
 use app\adminapi\middleware\PermissionMiddleware;
 use app\adminapi\validate\web\MenuValidate;
+use app\schema\request\BatchDeleteRequest;
 use app\schema\request\IdRequest;
 use app\service\admin\web\MenuService;
 use madong\swagger\attribute\Permission;
@@ -165,11 +166,11 @@ final class MenuController extends Crud
     }
 
     #[OA\Delete(
-        path: '/web/menu',
+        path: '/web/menu/{id}',
         summary: '删除菜单',
         tags: ['菜单管理'],
         parameters: [
-            new OA\Parameter(name: "id", description: "菜单ID", in: "path", required: true, schema: new OA\Schema(type: "integer")),
+            new OA\Parameter(name: "id", description: "菜单ID（多个以逗号分隔）", in: "path", required: true, schema: new OA\Schema(type: "string")),
         ],
         responses: [
             new OA\Response(
@@ -194,8 +195,28 @@ final class MenuController extends Crud
     public function destroy(Request $request): \support\Response
     {
         try {
-            $ids = $request->input('ids',[]);
-            $this->service->batchDelete($ids);
+            // 兼容两种调用：path 单个ID（DELETE /web/menu/{id}）与批量（query/body ids）
+            $ids = $request->input('ids', $request->input('id', []));
+            $this->service->batchDelete(is_array($ids) ? $ids : explode(',', (string) $ids));
+            return Json::success('删除成功');
+        } catch (\Throwable $e) {
+            return Json::fail($e->getMessage());
+        }
+    }
+
+    #[OA\Delete(
+        path: '/web/menu',
+        summary: '批量删除菜单',
+        tags: ['菜单管理'],
+        x: [SchemaConstants::X_SCHEMA_REQUEST => BatchDeleteRequest::class],
+    )]
+    #[Permission("web:menu:delete")]
+    #[SimpleResponse(schema: [], example: [])]
+    public function batchDelete(Request $request): \support\Response
+    {
+        try {
+            $ids = $request->input('ids', []);
+            $this->service->batchDelete(is_array($ids) ? $ids : explode(',', (string) $ids));
             return Json::success('删除成功');
         } catch (\Throwable $e) {
             return Json::fail($e->getMessage());
