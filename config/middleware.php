@@ -11,28 +11,29 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-use app\middleware\global\RateLimiterMiddleware;
-use app\middleware\admin\TenantMiddleware;
-use app\middleware\admin\SubscriptionMiddleware;
-
 return [
     // 平台管理端中间件
-    'platformapi' => [
-        RateLimiterMiddleware::class,//限流中间件
+    // 注意：key 必须是应用名（webman 依据控制器命名空间 app\platform 推断），
+    // 写成 'platformapi'（路由前缀）不会生效
+    // 权限策略：平台端暂不启用 RBAC，平台超管默认拥有全部权限；
+    // 后续接入时在此追加 PermissionMiddleware 即可（控制器 #[Permission] 注解已保留）
+    'platform' => [
+        \app\middleware\global\RateLimiterMiddleware::class,             //限流中间件
+        \app\platform\middleware\AccessTokenMiddleware::class,           //平台端鉴权中间件
     ],
     //应用中间件
     'adminapi' => [
-        RateLimiterMiddleware::class,//限流中间件
-        TenantMiddleware::class,//租户上下文中间件
-        SubscriptionMiddleware::class,//订阅验证中间件（可选）
+        \app\middleware\global\RateLimiterMiddleware::class,             //限流中间件
+        \app\middleware\admin\TenantMiddleware::class,                   //租户上下文中间件
+        \app\middleware\admin\SubscriptionMiddleware::class,             //订阅验证中间件（可选）
     ],
     // 超全局中间件-覆盖插件
     '@'        => [
-        \app\middleware\global\CheckInstallMiddleware::class,//安装检查中间件（最外层）
-        \app\middleware\global\CleanupMiddleware::class,//请求级兜底清理（最外层，cleanup 在最终阶段执行）
-        \app\middleware\global\AllowCrossOriginMiddleware::class,//跨域中间件
-        \app\middleware\global\Lang::class,//多语言切换中间件
-        \app\middleware\global\PlatformSwitchMiddleware::class,//平台级站点开关中间件
+        \app\middleware\global\CheckInstallMiddleware::class,            //安装检查中间件（最外层）
+        \app\middleware\global\CleanupMiddleware::class,                 //请求级兜底清理（最外层，cleanup 在最终阶段执行）
+        \app\middleware\global\AllowCrossOriginMiddleware::class,        //跨域中间件
+        \app\middleware\global\Lang::class,                              //多语言切换中间件
+        \app\middleware\global\PlatformSwitchMiddleware::class,          //平台级站点开关中间件
     ],
     // 全局中间件-主项目有效
     ''         => [
@@ -41,8 +42,8 @@ return [
 
     // 用户端 API 中间件
     'api'      => [
-        \app\middleware\api\TenantIdentifyMiddleware::class,    //前端租户识别中间件（不强制登录，纯识别租户上下文）
-        \app\middleware\api\SiteSwitchMiddleware::class,        //单体级站点开关中间件（仅单体模式生效）
-        \app\middleware\api\TenantSiteSwitchMiddleware::class,  //租户级站点开关中间件（仅多租户模式生效）
+        \app\middleware\api\TenantIdentifyMiddleware::class,             //前端租户识别中间件（不强制登录，纯识别租户上下文）
+        \app\middleware\api\SiteSwitchMiddleware::class,                 //单体级站点开关中间件（仅单体模式生效）
+        \app\middleware\api\TenantSiteSwitchMiddleware::class,           //租户级站点开关中间件（仅多租户模式生效）
     ],
 ];
