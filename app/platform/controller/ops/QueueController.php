@@ -17,11 +17,9 @@ use app\platform\controller\Base;
 use core\foundation\tool\Json;
 use madong\swagger\annotation\response\SimpleResponse;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Request;
 use Webman\RedisQueue\Client;
 
-#[Middleware(\app\platform\middleware\AccessTokenMiddleware::class)]
 final class QueueController extends Base
 {
     protected array $availableQueues = [

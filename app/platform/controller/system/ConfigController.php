@@ -19,10 +19,8 @@ use core\foundation\tool\Json;
 use madong\swagger\annotation\response\SimpleResponse;
 use madong\swagger\attribute\AllowAnonymous;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Request;
 
-#[Middleware(\app\platform\middleware\AccessTokenMiddleware::class)]
 final class ConfigController extends Base
 {
     public function __construct(ConfigService $service)

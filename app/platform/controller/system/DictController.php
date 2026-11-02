@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace app\platform\controller\system;
 
 use app\platform\controller\Base;
-use app\platform\middleware\AccessTokenMiddleware;
 use app\service\admin\system\dict\DictService;
 use app\service\core\enum\EnumService;
 use core\foundation\tool\Json;
@@ -22,11 +21,9 @@ use madong\swagger\annotation\response\PageResponse;
 use madong\swagger\annotation\response\SimpleResponse;
 use madong\swagger\attribute\AllowAnonymous;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Container;
 use support\Request;
 
-#[Middleware(AccessTokenMiddleware::class)]
 final class DictController extends Base
 {
     public function __construct(DictService $service)

@@ -15,7 +15,6 @@ declare(strict_types=1);
 namespace app\platform\controller\ops;
 
 use app\platform\controller\Base;
-use app\platform\middleware\AccessTokenMiddleware;
 use app\platform\schema\request\ops\LoginLogQueryRequest;
 use app\platform\schema\response\ops\LoginLogResponse;
 use app\service\admin\ops\logs\LoginLogService;
@@ -23,10 +22,8 @@ use core\foundation\tool\Json;
 use madong\swagger\attribute\Permission;
 use OpenApi\Attributes as OA;
 use support\Request;
-use support\annotation\Middleware;
 use WebmanTech\Swagger\DTO\SchemaConstants;
 
-#[Middleware(AccessTokenMiddleware::class)]
 final class LoginLogController extends Base
 {
     public function __construct(LoginLogService $service)

@@ -16,7 +16,6 @@ declare(strict_types=1);
 namespace app\platform\controller\plugin;
 
 use app\platform\controller\Base;
-use app\platform\middleware\AccessTokenMiddleware;
 use app\service\core\plugin\PluginDownloadService;
 use app\service\core\plugin\PluginInstallService;
 use app\service\core\plugin\PluginRemoteService;
@@ -29,13 +28,11 @@ use madong\swagger\annotation\response\PageResponse;
 use madong\swagger\annotation\response\SimpleResponse;
 use madong\swagger\attribute\Permission;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Container;
 use support\Request;
 use support\Response;
 
 #[OA\Tag(name: '模块市场', description: '应用管理-模块市场')]
-#[Middleware(AccessTokenMiddleware::class)]
 final class PluginController extends Base
 {
     use SseStreamTrait;

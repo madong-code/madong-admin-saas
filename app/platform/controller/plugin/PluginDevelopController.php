@@ -25,12 +25,10 @@ use madong\swagger\annotation\response\DataResponse;
 use madong\swagger\annotation\response\SimpleResponse;
 use madong\swagger\attribute\Permission;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Request;
 use support\Response;
 
 #[OA\Tag(name: '平台-插件开发', description: '平台端应用管理-插件开发')]
-#[Middleware(\app\platform\middleware\AccessTokenMiddleware::class)]
 final class PluginDevelopController extends Base
 {
     public function __construct(PluginDevelopService $service, PluginValidate $validate)

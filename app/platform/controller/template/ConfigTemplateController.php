@@ -18,10 +18,8 @@ use app\platform\controller\Base;
 use app\service\platform\template\ConfigTemplateService;
 use core\foundation\tool\Json;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Request;
 
-#[Middleware(\app\platform\middleware\AccessTokenMiddleware::class)]
 final class ConfigTemplateController extends Base
 {
     public function __construct(ConfigTemplateService $service)

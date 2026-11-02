@@ -20,14 +20,12 @@ use madong\swagger\annotation\response\SimpleResponse;
 use OpenApi\Attributes as OA;
 use support\Container;
 use support\Request;
-use support\annotation\Middleware;
 use Webman\Http\Response;
 
 /**
  * 套餐权限菜单（关联 sys_menu）
  */
 #[OA\Tag(name: '套餐权限管理')]
-#[Middleware(\app\platform\middleware\AccessTokenMiddleware::class)]
 final class PermissionController extends Base
 {
     /**

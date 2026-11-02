@@ -25,10 +25,8 @@ use madong\swagger\annotation\response\SimpleResponse;
 use madong\swagger\attribute\Permission;
 use mysql_xdevapi\Exception;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Request;
 
-#[Middleware(\app\platform\middleware\AccessTokenMiddleware::class)]
 final class DbSettingController extends Base
 {
 

@@ -26,12 +26,10 @@ use madong\swagger\annotation\response\SimpleResponse;
 use madong\swagger\annotation\response\PageResponse;
 use madong\swagger\attribute\Permission;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Container;
 use support\Request;
 
 #[OA\Tag(name: '平台-租户授权', description: '平台端应用管理-租户插件授权')]
-#[Middleware(\app\platform\middleware\AccessTokenMiddleware::class)]
 final class PluginTenantAuthController extends Base
 {
     use SseStreamTrait;

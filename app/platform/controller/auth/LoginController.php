@@ -22,7 +22,6 @@ use core\infrastructure\cache\CacheService;
 use madong\swagger\annotation\response\SimpleResponse;
 use madong\swagger\attribute\AllowAnonymous;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Container;
 use support\Request;
 

@@ -14,18 +14,15 @@ declare(strict_types=1);
 namespace app\platform\controller\ops;
 
 use app\platform\controller\Base;
-use app\platform\middleware\AccessTokenMiddleware;
 use app\service\core\lang\TranslationService;
 use core\foundation\exception\handler\AdminException;
 use core\foundation\tool\Json;
 use madong\swagger\annotation\response\PageResponse;
 use madong\swagger\annotation\response\SimpleResponse;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Request;
 use support\Response;
 
-#[Middleware(AccessTokenMiddleware::class)]
 final class LangController extends Base
 {
     public function __construct(TranslationService $service)

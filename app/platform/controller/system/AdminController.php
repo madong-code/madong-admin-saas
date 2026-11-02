@@ -23,7 +23,6 @@ use core\foundation\tool\Json;
 use madong\swagger\annotation\response\PageResponse;
 use madong\swagger\annotation\response\SimpleResponse;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Container;
 use support\Request;
 
@@ -33,7 +32,6 @@ use support\Request;
  * 与 adminapi 用户管理共享 AdminDao/AdminModel，
  * 但查询时绕过 TenantScope，支持查看和管理所有租户的用户。
  */
-#[Middleware(\app\platform\middleware\AccessTokenMiddleware::class)]
 final class AdminController extends Base
 {
     public function __construct(AdminService $service, AdminValidate $validate)

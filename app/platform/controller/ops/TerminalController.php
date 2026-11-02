@@ -13,7 +13,6 @@ declare(strict_types=1);
  */
 namespace app\platform\controller\ops;
 
-use app\platform\middleware\AccessTokenMiddleware;
 use core\business\terminal\Terminal;
 use core\foundation\tool\Json;
 use core\foundation\tool\Sse;
@@ -21,11 +20,9 @@ use madong\swagger\annotation\response\SimpleResponse;
 use madong\swagger\attribute\AllowAnonymous;
 use madong\swagger\attribute\Permission;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Request;
 use support\Response;
 
-#[Middleware(AccessTokenMiddleware::class)]
 final class TerminalController
 {
     #[OA\Get(

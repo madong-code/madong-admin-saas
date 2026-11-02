@@ -23,7 +23,6 @@ use madong\swagger\annotation\response\SimpleResponse;
 use OpenApi\Attributes as OA;
 use support\Request;
 
-//#[Middleware(\app\platform\middleware\TenantMiddleware::class)]
 final class AccountController extends Base
 {
     public function __construct(TenantService $service)

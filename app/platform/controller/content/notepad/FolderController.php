@@ -13,7 +13,6 @@ declare(strict_types=1);
  */
 namespace app\platform\controller\content\notepad;
 
-use app\platform\middleware\AccessTokenMiddleware;
 use app\platform\PlatformCurrentUser;
 use app\service\admin\content\notepad\NotepadDocumentService;
 use app\service\admin\content\notepad\NotepadFolderService;
@@ -22,12 +21,10 @@ use madong\swagger\annotation\response\SimpleResponse;
 use madong\swagger\attribute\AllowAnonymous;
 use madong\swagger\attribute\Permission;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Container;
 use support\Request;
 use support\Response;
 
-#[Middleware(AccessTokenMiddleware::class)]
 final class FolderController
 {
     public function __construct(

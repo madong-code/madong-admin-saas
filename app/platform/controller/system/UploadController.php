@@ -24,10 +24,8 @@ use madong\swagger\annotation\response\SimpleResponse;
 use madong\swagger\attribute\AllowAnonymous;
 use OpenApi\Attributes as OA;
 use OpenApi\Attributes\RequestBody;
-use support\annotation\Middleware;
 use support\Request;
 
-#[Middleware(\app\platform\middleware\AccessTokenMiddleware::class)]
 final class UploadController extends Base
 {
     /**

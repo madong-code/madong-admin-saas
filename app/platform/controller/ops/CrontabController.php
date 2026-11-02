@@ -20,7 +20,6 @@ use app\adminapi\schema\response\ops\crontab\CrontabResponse;
 use app\adminapi\validate\ops\crontab\CrontabValidate;
 use app\enum\system\OperationResult;
 use app\platform\controller\Base;
-use app\platform\middleware\AccessTokenMiddleware;
 use app\platform\middleware\OperationMiddleware;
 use app\schema\request\BatchDeleteRequest;
 use app\schema\request\IdRequest;
@@ -37,7 +36,7 @@ use support\Request;
 use support\annotation\Middleware;
 use WebmanTech\Swagger\DTO\SchemaConstants;
 
-#[Middleware(AccessTokenMiddleware::class, OperationMiddleware::class)]
+#[Middleware(OperationMiddleware::class)]
 final class CrontabController extends Base
 {
     public function __construct(CrontabService $service, CrontabValidate $validate)

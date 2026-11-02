@@ -16,17 +16,14 @@ declare(strict_types=1);
 namespace app\platform\controller\plugin;
 
 use app\platform\controller\Base;
-use app\platform\middleware\AccessTokenMiddleware;
 use app\service\platform\plugin\PluginAuthService;
 use core\foundation\tool\Json;
 use madong\swagger\annotation\response\SimpleResponse;
 use madong\swagger\attribute\Permission;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Request;
 
 #[OA\Tag(name: '应用授权', description: '平台端-应用授权')]
-#[Middleware(AccessTokenMiddleware::class)]
 final class PluginAuthController extends Base
 {
     public function __construct(

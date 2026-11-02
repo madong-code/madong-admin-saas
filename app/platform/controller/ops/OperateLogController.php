@@ -15,7 +15,6 @@ declare(strict_types=1);
 namespace app\platform\controller\ops;
 
 use app\platform\controller\Base;
-use app\platform\middleware\AccessTokenMiddleware;
 use app\platform\middleware\OperationMiddleware;
 use app\platform\schema\request\ops\OperateLogQueryRequest;
 use app\platform\schema\response\ops\OperateLogResponse;
@@ -27,7 +26,7 @@ use support\Request;
 use support\annotation\Middleware;
 use WebmanTech\Swagger\DTO\SchemaConstants;
 
-#[Middleware(AccessTokenMiddleware::class, OperationMiddleware::class)]
+#[Middleware(OperationMiddleware::class)]
 final class OperateLogController extends Base
 {
     public function __construct(OperateLogService $service)

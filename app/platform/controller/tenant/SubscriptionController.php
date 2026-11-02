@@ -22,11 +22,9 @@ use madong\swagger\annotation\response\PageResponse;
 use madong\swagger\annotation\response\SimpleResponse;
 use madong\swagger\attribute\Permission;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Container;
 use support\Request;
 use WebmanTech\Swagger\DTO\SchemaConstants;
-#[Middleware(\app\platform\middleware\AccessTokenMiddleware::class)]
 final class SubscriptionController extends Base
 {
     public function __construct(SubscriptionService $service, SubscriptionValidate $validate)

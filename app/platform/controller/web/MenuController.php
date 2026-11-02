@@ -20,11 +20,9 @@ use app\schema\request\IdRequest;
 use app\service\admin\web\MenuService;
 use core\foundation\tool\Json;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Request;
 use WebmanTech\Swagger\DTO\SchemaConstants;
 
-#[Middleware(\app\platform\middleware\AccessTokenMiddleware::class)]
 final class MenuController extends Base
 {
     public function __construct(MenuService $service, MenuValidate $validate)

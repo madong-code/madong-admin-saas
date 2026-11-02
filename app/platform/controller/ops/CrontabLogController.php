@@ -17,7 +17,6 @@ namespace app\platform\controller\ops;
 use app\adminapi\schema\request\ops\crontab\CrontabLogQueryRequest;
 use app\adminapi\schema\response\ops\crontab\CrontabLogResponse;
 use app\platform\controller\Base;
-use app\platform\middleware\AccessTokenMiddleware;
 use app\platform\middleware\OperationMiddleware;
 use app\schema\request\BatchDeleteRequest;
 use app\schema\request\IdRequest;
@@ -31,7 +30,7 @@ use support\annotation\Middleware;
 use support\Request;
 use WebmanTech\Swagger\DTO\SchemaConstants;
 
-#[Middleware(AccessTokenMiddleware::class, OperationMiddleware::class)]
+#[Middleware(OperationMiddleware::class)]
 final class CrontabLogController extends Base
 {
     public function __construct(CrontabLogService $service)

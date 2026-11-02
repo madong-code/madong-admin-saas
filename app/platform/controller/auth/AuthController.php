@@ -21,11 +21,9 @@ use core\io\upload\UploadScene;
 use core\security\jwt\JwtToken;
 use madong\swagger\annotation\response\SimpleResponse;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Request;
 
 #[OA\Tag(name: '认证', description: '用户认证与个人中心')]
-#[Middleware(\app\platform\middleware\AccessTokenMiddleware::class)]
 final class AuthController extends Base
 {
     public function __construct(AuthService $service)

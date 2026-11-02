@@ -27,11 +27,9 @@ use madong\swagger\annotation\response\SimpleResponse;
 use OpenApi\Attributes as OA;
 use OpenApi\Attributes\RequestBody;
 use support\Container;
-use support\annotation\Middleware;
 use support\Request;
 use WebmanTech\Swagger\DTO\SchemaConstants;
 
-#[Middleware(\app\platform\middleware\AccessTokenMiddleware::class)]
 final class MenuController extends Base
 {
     public function __construct(MenuService $service, MenuValidate $validate)

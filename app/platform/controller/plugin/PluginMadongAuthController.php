@@ -16,18 +16,15 @@ declare(strict_types=1);
 namespace app\platform\controller\plugin;
 
 use app\platform\controller\Base;
-use app\platform\middleware\AccessTokenMiddleware;
 use app\service\core\plugin\PluginRemoteService;
 use core\foundation\tool\Json;
 use madong\swagger\attribute\AllowAnonymous;
 use madong\swagger\annotation\response\SimpleResponse;
 use madong\swagger\attribute\Permission;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Request;
 
 #[OA\Tag(name: '应用授权', description: '平台端-应用授权信息')]
-#[Middleware(AccessTokenMiddleware::class)]
 final class PluginMadongAuthController extends Base
 {
     public function __construct(PluginRemoteService $service)

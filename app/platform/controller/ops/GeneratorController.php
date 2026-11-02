@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace app\platform\controller\ops;
 
 use app\platform\controller\Base;
-use app\platform\middleware\AccessTokenMiddleware;
 use app\platform\validate\ops\generator\GeneratorValidate;
 use app\schema\request\BatchDeleteRequest;
 use app\schema\request\IdRequest;
@@ -28,12 +27,10 @@ use madong\swagger\annotation\response\PageResponse;
 use madong\swagger\annotation\response\SimpleResponse;
 use madong\swagger\attribute\Permission;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Container;
 use support\Request;
 use WebmanTech\Swagger\DTO\SchemaConstants;
 
-#[Middleware(AccessTokenMiddleware::class)]
 final class GeneratorController extends Base
 {
     public function __construct(GeneratorService $service, GeneratorValidate $validate)

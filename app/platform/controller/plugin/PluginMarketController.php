@@ -21,11 +21,9 @@ use core\foundation\tool\Json;
 use madong\swagger\annotation\response\PageResponse;
 use madong\swagger\attribute\Permission;
 use OpenApi\Attributes as OA;
-use support\annotation\Middleware;
 use support\Request;
 
 #[OA\Tag(name: '平台-模块市场', description: '平台端应用管理-模块市场')]
-#[Middleware(\app\platform\middleware\AccessTokenMiddleware::class)]
 final class PluginMarketController extends Base
 {
     public function __construct(
