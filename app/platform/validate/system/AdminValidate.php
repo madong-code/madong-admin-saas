@@ -15,8 +15,8 @@ declare(strict_types=1);
 namespace app\platform\validate\system;
 
 use app\model\system\admin\Admin;
-use core\foundation\base\BaseValidate;
 use core\business\tenant\scope\TenantScope;
+use core\foundation\base\BaseValidate;
 use Illuminate\Validation\Rule;
 
 /**
@@ -31,18 +31,21 @@ class AdminValidate extends BaseValidate
     public function rules(): array
     {
         $id = request()->route->param('id');
+        // root 是安装期创建的系统保留账号：允许编辑既有 root 账号时保留用户名，
+        // 但禁止新建账号或把其他账号改名为 root。
+        $userNameRules = ['required', 'max:50'];
+        if (!$this->isExistingRootAdmin($id)) {
+            $userNameRules[] = 'not_in:root';
+        }
+        $userNameRules[] = Rule::unique(Admin::class, 'user_name')
+            ->ignore($id, 'id')
+            // 平台端：绕过 TenantScope 检查全局唯一性
+            ->where(function ($query) {
+                $query->withoutGlobalScope(TenantScope::class);
+            });
+
         return [
-            'user_name'    => [
-                'required',
-                'max:50',
-                'not_in:root',
-                // 平台端：绕过 TenantScope 检查全局唯一性
-                Rule::unique(Admin::class, 'user_name')
-                    ->ignore($id, 'id')
-                    ->where(function ($query) {
-                        $query->withoutGlobalScope(TenantScope::class);
-                    }),
-            ],
+            'user_name'    => $userNameRules,
             'real_name'    => 'required',
             'password'     => 'required|min:5|max:18',
             'dept_id'      => 'required',
@@ -83,4 +86,19 @@ class AdminValidate extends BaseValidate
             'mobile_phone',
         ],
     ];
+
+    /**
+     * 判断当前编辑的账号是否为安装期创建的系统保留账号 root
+     */
+    private function isExistingRootAdmin($id): bool
+    {
+        if (empty($id)) {
+            return false;
+        }
+
+        return Admin::query()
+            ->withoutGlobalScope(TenantScope::class)
+            ->where('id', $id)
+            ->value('user_name') === 'root';
+    }
 }

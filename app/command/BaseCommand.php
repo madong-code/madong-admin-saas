@@ -87,6 +87,10 @@ abstract class BaseCommand extends Command
                                         }
                                         return Command::SUCCESS;
 
+                                    case 'runtime_error':
+                                        $io->error($data['message'] ?? '运行时错误');
+                                        return Command::FAILURE;
+
                                     case 'error':
                                         $io->error($data['message'] ?? 'Operation failed');
                                         return Command::FAILURE;
@@ -106,7 +110,7 @@ abstract class BaseCommand extends Command
                 // 不是SSE事件，直接输出
                 $io->text(trim($event));
             }
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             // 忽略错误，继续执行
             $io->error('处理SSE事件时出错: ' . $e->getMessage());
         }
@@ -180,7 +184,11 @@ abstract class BaseCommand extends Command
     }
 
     /**
-     * 密码输入（带掩码显示）
+     * 密码输入（按行读取，避免污染交互流）
+     *
+     * 与 Symfony QuestionHelper 一致地使用 fgets(STDIN) 读取整行：旧的逐字符读取
+     * 会在 Windows 的 CRLF 中残留 \n，并与 QuestionHelper 的缓冲读取互相干扰，
+     * 导致后续的 ask()/confirm() 被跳过或答案错位（例如「是否启用多租户」被默认值吞掉）。
      *
      * @param SymfonyStyle $io SymfonyStyle 实例
      * @param string $message 提示消息
@@ -190,70 +198,22 @@ abstract class BaseCommand extends Command
     protected function askPassword(SymfonyStyle $io, string $message, string $mask = '*'): string
     {
         $io->text($message);
-        
-        $password = '';
-        while (true) {
-            $char = $this->readCharacter();
-            
-            if ($char === "\n" || $char === "\r") {
-                $io->newLine();
-                break;
-            }
-            
-            if ($char === "\x7f" || $char === "\b") { // Backspace
-                if (strlen($password) > 0) {
-                    $password = substr($password, 0, -1);
-                    $io->write("\b \b");
-                }
-            } else {
-                $password .= $char;
-                $io->write($mask);
-            }
+
+        // Linux/Mac 终端关闭回显；Windows 终端由系统回显，逐字符读取本来也无法隐藏
+        $hideEcho = DIRECTORY_SEPARATOR !== '\\';
+        if ($hideEcho) {
+            @system('stty -echo 2>/dev/null');
         }
-        
+        $line = fgets(STDIN);
+        if ($hideEcho) {
+            @system('stty echo 2>/dev/null');
+        }
+
+        $password = $line === false ? '' : rtrim($line, "\r\n");
+        $io->write(str_repeat($mask, strlen($password)));
+        $io->newLine();
+
         return $password;
-    }
-
-    /**
-     * 读取单个字符（支持 Windows/Linux）
-     */
-    private function readCharacter(): string
-    {
-        // Windows 环境
-        if (DIRECTORY_SEPARATOR === '\\') {
-            return $this->readCharacterWindows();
-        }
-        
-        // Linux/Mac 环境
-        $tty = '/dev/tty';
-        if (!is_file($tty) || !is_readable($tty)) {
-            // 回退到标准输入
-            return fgets(STDIN) ?: '';
-        }
-        
-        $ttySpec = trim(`stty -g`);
-        system('stty -icanon -echo');
-        $char = fgetc(fopen($tty, 'r'));
-        system("stty {$ttySpec}");
-        
-        return $char ?: '';
-    }
-
-    /**
-     * Windows 环境下读取单个字符
-     */
-    private function readCharacterWindows(): string
-    {
-        $input = stream_get_contents(STDIN, 1);
-        
-        // 处理 Windows 特殊键
-        if ($input === "\xe0" || $input === "\0") {
-            // 功能键前缀，跳过下一个字节
-            stream_get_contents(STDIN, 1);
-            return "\x7f"; // 作为退格键处理
-        }
-        
-        return $input;
     }
 
     /**

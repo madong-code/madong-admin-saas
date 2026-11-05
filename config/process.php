@@ -26,8 +26,8 @@ return [
         'group'       => '',
         'reusePort'   => false,
         // 协程事件循环（Swow）：阻塞 IO 时自动切换协程，配合 support\Context 实现租户上下文按协程隔离
-        // 未安装 swow 扩展时可通过 .env 的 APP_EVENT_LOOP= 置空回退同步模式
-        'eventLoop'   => env('APP_EVENT_LOOP', \Workerman\Events\Swow::class) ?: '',
+        // 未安装 swow 扩展时自动回退同步模式；也可通过 .env 的 APP_EVENT_LOOP= 显式置空
+        'eventLoop'   => env('APP_EVENT_LOOP', extension_loaded('swow') ? \Workerman\Events\Swow::class : '') ?: '',
         'context'     => [],
         'constructor' => [
             'requestClass' => Request::class,

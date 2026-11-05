@@ -31,12 +31,16 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  *
  * 使用示例:
  * php webman install:madong
- * php webman install:madong --username=admin --password=123456
- * php webman install:madong --db-host=localhost --db-port=3306 --db-name=madong --db-user=root --db-pass=123456 --admin-username=admin --admin-password=123456
+ * php webman install:madong -y --tenant-mode=manual --admin-username=root --admin-password=123456
+ * php webman install:madong -y --tenant-mode=none --admin-username=admin --admin-password=123456
+ * php webman install:madong --db-host=localhost --db-port=3306 --db-name=madong --db-user=root --db-pass=123456
+ *
+ * 交互顺序与 Web 向导一致：环境检测 → 数据库 → 是否启用多租户 → 超级管理员账户 → 安装选项。
+ * 多租户默认使用系统保留账号 root（平台超级管理员），单租户默认 admin。
  */
 #[AsCommand(
     name: 'install:madong',
-    description: '安装 MDAdmin 框架（交互式或参数化）',
+    description: '安装Madong-Saas框架（交互式或参数化）',
     aliases: ['install:madong'],
     hidden: false
 )]
@@ -76,8 +80,8 @@ class InstallCommand extends BaseCommand
     protected function configure(): void
     {
         $this
-            ->setDescription('安装 MDAdmin 框架')
-            ->setHelp('此命令用于安装 MDAdmin 框架，支持交互式和参数化两种方式')
+            ->setDescription('安装Madong-SaaS框架（交互式或参数化）')
+            ->setHelp('此命令用于安装 Madong-SaaS框架，支持交互式和参数化两种方式')
             
             // 数据库参数
             ->addOption('db-host', null, InputOption::VALUE_OPTIONAL, '数据库主机')
@@ -87,14 +91,19 @@ class InstallCommand extends BaseCommand
             ->addOption('db-pass', null, InputOption::VALUE_OPTIONAL, '数据库密码')
             ->addOption('db-prefix', null, InputOption::VALUE_OPTIONAL, '数据库表前缀', 'ma_')
             
-            // 管理员参数
-            ->addOption('admin-username', null, InputOption::VALUE_OPTIONAL, '管理员用户名')
+            // 管理员参数（默认值依赖多租户开关，交互时在租户配置之后收集）
+            ->addOption('admin-username', null, InputOption::VALUE_OPTIONAL, '管理员用户名（多租户默认 root，单租户默认 admin；显式指定优先）')
             ->addOption('admin-password', null, InputOption::VALUE_OPTIONAL, '管理员密码')
             ->addOption('admin-email', null, InputOption::VALUE_OPTIONAL, '管理员邮箱')
+            ->addOption('site-name', null, InputOption::VALUE_OPTIONAL, '站点名称')
+
+            // 租户参数（键名与 Web UI 安装向导一致；交互模式先询问是否启用）
+            ->addOption('tenant-mode', null, InputOption::VALUE_OPTIONAL, '租户模式：none=单租户，manual=启用多租户（安装后手动创建租户）；默认 manual')
+            ->addOption('enable-tenant', null, InputOption::VALUE_OPTIONAL, '是否启用多租户（1=是，0=否），显式设置时覆盖 --tenant-mode')
             
             // 安装选项
             ->addOption('install-database', null, InputOption::VALUE_OPTIONAL, '是否安装数据库表（1=是，0=否）', '1')
-            ->addOption('build-project', null, InputOption::VALUE_OPTIONAL, '是否构建前端项目（1=是，0=否）', '1')
+            ->addOption('build-project', null, InputOption::VALUE_OPTIONAL, '是否构建前端项目（1=是，0=否；默认不构建，失败不影响安装）')
             ->addOption('non-interactive', 'y', InputOption::VALUE_NONE, '非交互模式（使用所有默认值）')
             ->addOption('skip-env-check', null, InputOption::VALUE_NONE, '跳过环境检查');
     }
@@ -113,7 +122,7 @@ class InstallCommand extends BaseCommand
             '欢迎使用 MDAdmin-Saas 框架安装程序！',
             '此程序将引导您完成框架的安装配置。',
             '',
-            '<comment>提示: 密码输入时不会显示字符(出于安全考虑)，输入完成后会显示确认信息</comment>',
+            '<comment>提示: 部分终端会回显密码明文，请注意环境安全；输入完成后会显示确认信息</comment>',
             '',
         ]);
 
@@ -124,9 +133,14 @@ class InstallCommand extends BaseCommand
             return Command::FAILURE;
         }
 
-        // 交互式或非交互式
-        $isInteractive = !$input->getOption('non-interactive');
+        // 交互式或非交互式：同时尊重 Symfony 的 --no-interaction / -n，
+        // 避免出现「以为在交互、实际所有问题都被跳过」的错觉
+        $isInteractive = !$input->getOption('non-interactive') && $input->isInteractive();
         $skipEnvCheck = $input->getOption('skip-env-check');
+
+        if (!$isInteractive) {
+            $io->note('非交互模式：不询问任何问题。默认启用多租户并使用平台超管 root、数据库 madong_saas；可用 --enable-tenant=0（账号默认变回 admin）、--admin-username、--db-name 覆盖。');
+        }
 
         // 1. 环境检测
         if (!$skipEnvCheck) {
@@ -134,8 +148,8 @@ class InstallCommand extends BaseCommand
             $this->handleEnvironmentCheck($io);
         }
 
-        // 2. 数据库配置
-        $io->section('2. 数据库配置');
+        // 2. 安装配置（顺序与 Web 向导一致：数据库 → 多租户 → 账户 → 选项）
+        $io->section('2. 安装配置（数据库 → 多租户 → 账户 → 选项）');
         $installParams = $this->collectInstallParams($io, $input, $isInteractive);
 
         // 3. 确认安装
@@ -153,15 +167,33 @@ class InstallCommand extends BaseCommand
             // 调用安装服务（共享在线安装逻辑）
             $generator = $this->getInstallService()->install($installParams);
             
-            // 处理 SSE 事件输出
+            // 处理 SSE 事件输出：completed 不提前返回，让生成器执行完服务重载
+            $completed = false;
             foreach ($generator as $chunk) {
                 $result = $this->handleSseEvent($chunk, $io, null);
-                if ($result !== null) {
-                    return $result;
+                if ($result === Command::FAILURE) {
+                    return Command::FAILURE;
+                }
+                if ($result === Command::SUCCESS) {
+                    $completed = true;
                 }
             }
-            
-            return Command::SUCCESS;
+
+            if ($completed) {
+                $io->note('CLI 安装不会自动重载 Webman 服务，请按部署方式重启后端后访问。');
+                $io->note('租户开关已写入 .env 的 APP_TENANT_ENABLED；重启后端后 /adminapi/install/check 的 saas_mode 才会更新。');
+                if (($installParams['enable_tenant'] ?? '0') === '1') {
+                    $io->note(sprintf(
+                        '多租户已启用：请用平台超级管理员 %s 登录平台端；默认租户与租户管理员请在安装后到平台后台创建。',
+                        $installParams['admin_username']
+                    ));
+                }
+                if (($installParams['build_project'] ?? '0') !== '1') {
+                    $io->note('已跳过前端构建；如需更新前端资源，请在后台「终端 → 重新发布」中单独执行。');
+                }
+            }
+
+            return $completed ? Command::SUCCESS : Command::FAILURE;
         } catch (\Throwable $e) {
             $this->outputError($io, '安装失败: ' . $e->getMessage(), $e);
             return Command::FAILURE;
@@ -218,12 +250,15 @@ class InstallCommand extends BaseCommand
 
     /**
      * 收集安装参数
+     *
+     * 顺序与 Web 安装向导一致：数据库 → 是否启用多租户 → 超级管理员账户 → 安装选项。
+     * 先决定租户开关，才能给出正确的账户默认值（多租户 root / 单租户 admin）。
      */
     private function collectInstallParams(SymfonyStyle $io, InputInterface $input, bool $isInteractive): array
     {
         $params = [];
 
-        // 数据库配置
+        // 1. 数据库配置
         $io->text('<info>数据库配置</info>');
         
         $dbHost = $input->getOption('db-host');
@@ -240,9 +275,9 @@ class InstallCommand extends BaseCommand
 
         $dbName = $input->getOption('db-name');
         if (!$dbName && $isInteractive) {
-            $dbName = $io->ask('请输入数据库名称', 'md_admin');
+            $dbName = $io->ask('请输入数据库名称', 'madong_saas');
         }
-        $params['db_database'] = $dbName ?? 'md_admin';
+        $params['db_database'] = $dbName ?? 'madong_saas';
 
         $dbUser = $input->getOption('db-user');
         if (!$dbUser && $isInteractive) {
@@ -252,7 +287,7 @@ class InstallCommand extends BaseCommand
 
         $dbPass = $input->getOption('db-pass');
         if (!$dbPass && $isInteractive) {
-            $io->text('提示: 密码输入时显示掩码字符 *');
+            $io->text('<comment>提示: 终端可能回显密码明文，请确认环境安全；输入完成后会显示确认信息</comment>');
             $dbPass = $this->askPassword($io, '请输入数据库密码: ');
             if ($dbPass !== '') {
                 $io->text('✓ 数据库密码已设置');
@@ -266,19 +301,60 @@ class InstallCommand extends BaseCommand
         }
         $params['db_prefix'] = $dbPrefix ?? 'ma_';
 
-        // 管理员配置
+        // 2. 多租户配置：先问「是否启用」，账户默认值依赖此开关
         $io->newLine();
-        $io->text('<info>管理员配置</info>');
+        $io->text('<info>多租户配置（先决定是否启用，再设置相关账户）</info>');
+
+        $tenantMode = $input->getOption('tenant-mode');
+        if ($tenantMode === null || $tenantMode === '') {
+            $tenantMode = $isInteractive
+                ? ($this->confirm($io, '是否启用多租户？（平台运营端 + 租户端，默认启用）', true) ? 'manual' : 'none')
+                : 'manual';
+        }
+        if (!in_array($tenantMode, ['none', 'manual'], true)) {
+            $io->warning("未知的租户模式 [{$tenantMode}]，已回退为 manual");
+            $tenantMode = 'manual';
+        }
+
+        $enableTenant = $tenantMode === 'manual' ? '1' : '0';
+        $explicitTenant = $input->getOption('enable-tenant');
+        if ($explicitTenant !== null && $explicitTenant !== '') {
+            $enableTenant = $explicitTenant === '1' ? '1' : '0';
+        }
+        // tenant_mode 与最终开关保持一致，避免摘要与实际安装结果不符
+        $tenantMode = $enableTenant === '1' ? 'manual' : 'none';
+
+        // 后端唯一消费 enable_tenant（'1' 启用），键名与 Web UI SSE 参数一致。
+        // 默认 manual，与 .example.env 的 APP_TENANT_ENABLED=true 对齐，避免 CLI 安装后 saas_mode 变为 false。
+        $params['tenant_mode']            = $tenantMode;
+        $params['enable_tenant']          = $enableTenant;
+        // 后端暂未实现安装期自动创建默认租户，安装后请在平台后台创建
+        $params['create_default_tenant'] = '0';
+
+        $tenantEnabled = $enableTenant === '1';
+        $io->text($tenantEnabled
+            ? '已启用多租户：平台超级管理员默认使用系统保留账号 root（仅安装期可创建）；默认租户与租户管理员请在安装后到平台后台创建。'
+            : '已选择单租户：超级管理员默认使用 admin。');
+
+        // 3. 超级管理员账户（默认值依赖上一步的租户开关）
+        $io->newLine();
+        $io->text($tenantEnabled
+            ? '<info>平台超级管理员配置（多租户：root）</info>'
+            : '<info>超级管理员配置（单租户：admin）</info>');
+
+        // root 是系统保留账号，后台业务校验禁止创建，仅安装器通过 PDO 直连写入；
+        // 显式 --admin-username 始终优先，单租户仍保持 admin。
+        $defaultAdminUsername = $tenantEnabled ? 'root' : 'admin';
 
         $adminUsername = $input->getOption('admin-username');
         if (!$adminUsername && $isInteractive) {
-            $adminUsername = $io->ask('请输入管理员用户名', 'admin');
+            $adminUsername = $io->ask('请输入超级管理员用户名', $defaultAdminUsername);
         }
-        $params['admin_username'] = $adminUsername ?? 'admin';
+        $params['admin_username'] = $adminUsername ?? $defaultAdminUsername;
 
         $adminPassword = $input->getOption('admin-password');
         if (!$adminPassword && $isInteractive) {
-            $io->text('提示: 密码输入时显示掩码字符 *');
+            $io->text('<comment>提示: 终端可能回显密码明文，请确认环境安全；输入完成后会显示确认信息</comment>');
             do {
                 $adminPassword = $this->askPassword($io, '请输入管理员密码（至少6位）: ');
                 if (strlen($adminPassword) < 6) {
@@ -295,7 +371,14 @@ class InstallCommand extends BaseCommand
         }
         $params['admin_email'] = $adminEmail ?? 'admin@example.com';
 
-        // 安装选项
+        // 站点名称（与 Web UI 参数保持一致，后端暂不消费）
+        $siteName = $input->getOption('site-name');
+        if (!$siteName && $isInteractive) {
+            $siteName = $io->ask('请输入站点名称', 'Madong管理系统');
+        }
+        $params['site_name'] = $siteName ?? 'Madong管理系统';
+
+        // 4. 安装选项
         $io->newLine();
         $io->text('<info>安装选项</info>');
 
@@ -306,10 +389,12 @@ class InstallCommand extends BaseCommand
         $params['install_database'] = $installDatabase ?? '1';
 
         $buildProject = $input->getOption('build-project');
-        if ($buildProject === null && $isInteractive) {
-            $buildProject = $this->confirm($io, '是否构建前端项目？', false) ? '1' : '0';
+        if ($buildProject === null || $buildProject === '') {
+            $buildProject = $isInteractive
+                ? ($this->confirm($io, '是否构建前端项目？（耗时较长，失败不影响安装）', false) ? '1' : '0')
+                : '0';
         }
-        $params['build_project'] = $buildProject ?? '0';
+        $params['build_project'] = $buildProject === '1' ? '1' : '0';
 
         return $params;
     }
@@ -327,7 +412,12 @@ class InstallCommand extends BaseCommand
             ['数据库名称' => $params['db_database']],
             ['数据库用户' => $params['db_username']],
             ['表前缀' => $params['db_prefix']],
-            ['管理员用户名' => $params['admin_username']],
+            ['租户模式' => ($params['enable_tenant'] ?? '0') === '1'
+                ? '多租户（APP_TENANT_ENABLED=true，默认租户请在后台创建）'
+                : '单租户（APP_TENANT_ENABLED=false）'],
+            ['超级管理员' => $params['admin_username'] . (($params['enable_tenant'] ?? '0') === '1'
+                ? '（平台超管 / 系统保留账号）'
+                : '（单租户）')],
             ['管理员邮箱' => $params['admin_email']],
             ['安装数据库' => $params['install_database'] == '1' ? '是' : '否'],
             ['构建前端' => $params['build_project'] == '1' ? '是' : '否'],
