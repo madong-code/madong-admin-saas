@@ -54,10 +54,12 @@ final class AccessTokenMiddleware implements MiddlewareInterface
         }
 
         try {
-            $jwt     = new JwtToken();
-            $userId  = $jwt->id();
+            $jwt = new JwtToken();
+            // 仅信任「签名 + 黑名单 + 类型 + 用户存在 + JTI 注册」全部通过的 payload，
+            // 不再直接读取 getPayloadFromRequest() 中的 admin_types
+            $payload = $jwt->getVerifiedPayload();
 
-            if (empty($userId)) {
+            if (empty($payload) || (string)($payload['id'] ?? '') === '') {
                 throw new UnauthorizedHttpException();
             }
 
@@ -67,7 +69,6 @@ final class AccessTokenMiddleware implements MiddlewareInterface
             // 校验管理员类型，仅允许平台管理员（platform/root）访问
             // 注意：必须无条件校验，不能依赖 tenant.enable，
             // 否则多租户模式下任意租户 Token 均可访问平台管理端
-            $payload    = $jwt->getPayloadFromRequest();
             // JWT 解码后 nested 对象可能仍是 stdClass，转为数组
             $ext        = isset($payload['extra']) ? (array)$payload['extra'] : $payload;
             $adminTypes = $this->resolveAdminTypes($ext);

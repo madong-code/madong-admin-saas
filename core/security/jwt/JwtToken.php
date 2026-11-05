@@ -78,12 +78,11 @@ class JwtToken
     )
     {
         $this->config = $config ?: config('core.security.jwt', []);
-        $this->secret = $this->config['secret'] ?? '';
+        $this->secret = trim((string)($this->config['secret'] ?? ''));
         $this->algo   = $this->config['algo'] ?? 'HS256';
 
-        if (empty($this->secret) || $this->secret === 'your-secret-key-change-in-production') {
-            $this->secret = 'default-secret-key-for-development';
-        }
+        // 严禁回退到任何硬编码/公开密钥：缺失、占位或过短密钥必须让服务快速失败
+        JwtSecret::assertValid($this->secret);
 
         $this->tokenStorage     = $tokenStorage ?? new RedisTokenStorage($this->config);
         $this->blacklistStorage = $blacklistStorage ?? new RedisBlacklistStorage($this->config);
@@ -870,6 +869,44 @@ class JwtToken
 
             $this->payloadCache = $this->parseToken($token);
             return $this->payloadCache;
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
+     * 获取当前请求的「已验证 payload」
+     *
+     * 在签名/过期校验基础上，追加黑名单 JTI、令牌类型、用户存在性
+     * 与服务端令牌存储中的 JTI 注册复核，避免仅凭签名自洽的伪造令牌被信任。
+     * 复用 payloadCache，不重复解码。
+     *
+     * @return array 验证通过返回 payload，否则返回空数组
+     */
+    public function getVerifiedPayload(): array
+    {
+        try {
+            $payload = $this->getPayloadFromRequest();
+            if (empty($payload)) {
+                return [];
+            }
+
+            $jti = (string)($payload['jti'] ?? '');
+            if ($jti === '' || $this->blacklistStorage->has($jti)) {
+                return [];
+            }
+            if (($payload['type'] ?? '') !== TokenType::ACCESS->value) {
+                return [];
+            }
+            if ((string)($payload['id'] ?? '') === '') {
+                return [];
+            }
+            // 服务端必须确实签发并注册过该 JTI，杜绝自签名令牌被当作平台身份
+            if (!$this->tokenStorage->exists($jti)) {
+                return [];
+            }
+
+            return $payload;
         } catch (\Throwable $e) {
             return [];
         }

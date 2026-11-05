@@ -18,8 +18,9 @@ declare(strict_types=1);
 return [
     'token_name'      => 'Authorization',
     // ========== 密钥配置 ==========
-    // 必须修改为您的实际密钥，建议使用 openssl_random_pseudo_bytes(32) 生成
-    'secret'          => env('JWT_SECRET', 'your-secret-key-change-in-production'),
+    // 仅从 .env 读取；安装向导自动生成随机值，存量部署执行 `php webman jwt:secret`。
+    // 禁止在此提供任何默认密钥：缺失或占位值会在 JwtToken 构造时直接抛异常（fail-fast）。
+    'secret'          => env('JWT_SECRET', ''),
 
     // 加密算法
     'algo'            => env('JWT_ALGO', 'HS256'),
