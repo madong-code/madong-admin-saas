@@ -173,7 +173,7 @@ final class CategoryController extends Crud
     #[SimpleResponse(schema: [], example: [])]
     public function all(Request $request): \support\Response
     {
-        return Json::success($this->service->getAllCategories());
+        return Json::success($this->service->getAllCategories($this->currentTenantId()));
     }
 
     #[OA\Get(
@@ -187,7 +187,7 @@ final class CategoryController extends Crud
     {
         $id       = $request->route->param('id');
         $service  = $this->service;
-        return Json::success($service->getDefinitionsByCategory($id));
+        return Json::success($service->getDefinitionsByCategory($id, $this->currentTenantId()));
     }
 
     #[OA\Get(
@@ -201,6 +201,20 @@ final class CategoryController extends Crud
     {
         $id       = $request->route->param('id');
         $service  = $this->service;
-        return Json::success($service->getDefinitionsByCategory($id));
+        return Json::success($service->getDefinitionsByCategory($id, $this->currentTenantId()));
+    }
+
+    /**
+     * 当前租户ID（平台/单租户返回 null，只读取 tenant_id=0 的平台默认数据）
+     */
+    protected function currentTenantId(): ?string
+    {
+        if (\core\business\tenant\context\TenantContext::isSingleMode()) {
+            return null;
+        }
+
+        $tenantId = \core\business\tenant\context\TenantContext::getTenantId();
+
+        return $tenantId === null || $tenantId === '' ? null : (string)$tenantId;
     }
 }

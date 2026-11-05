@@ -19,6 +19,7 @@ use app\enum\system\MessageStatus;
 use app\model\content\message\Category;
 use app\model\content\message\Definition;
 use app\model\content\message\Message;
+use app\scope\global\TenantScope;
 use core\communication\notify\enum\PushClientType;
 use core\communication\notify\Notification as NotifyFacade;
 use core\foundation\base\BaseService;
@@ -156,6 +157,55 @@ class NotifyService extends BaseService
         return 1;
     }
 
+    /**
+     * 按 key 反查分类（0=平台默认，T=租户私有，租户行优先）
+     */
+    protected function findCategoryByKey(string $key, string $tenantId): ?Category
+    {
+        return $this->tenantScopeQuery(Category::where('key', $key), $tenantId)
+            ->orderByRaw('CASE WHEN tenant_id = 0 THEN 1 ELSE 0 END')
+            ->first();
+    }
+
+    /**
+     * 按分类 + key 反查消息定义
+     *
+     * 分类行已确定归属（0 或 T），定义直接跟随分类的 tenant_id，避免作用域再次改写。
+     */
+    protected function findDefinition(int|string $categoryId, string $key, string $tenantId): ?Definition
+    {
+        $category = $this->tenantScopeQuery(Category::where('id', $categoryId), $tenantId)->first();
+        $ownerId  = $category ? (string)$category->tenant_id : $this->normalizeTenantId($tenantId);
+
+        return Definition::withoutGlobalScope(TenantScope::class)
+            ->where('category_id', $categoryId)
+            ->where('key', $key)
+            ->where('tenant_id', $ownerId)
+            ->first();
+    }
+
+    /**
+     * 构造 0/T 可见性查询（移除 TenantScope，避免字段隔离下平台默认数据不可见）
+     */
+    protected function tenantScopeQuery($query, string $tenantId)
+    {
+        $query = $query->withoutGlobalScope(TenantScope::class);
+
+        if ($tenantId === '' || $tenantId === '*') {
+            return $query->where('tenant_id', 0);
+        }
+
+        return $query->whereIn('tenant_id', ['0', $tenantId]);
+    }
+
+    /**
+     * '*' 或空租户统一归一为 0（单租户/平台）
+     */
+    protected function normalizeTenantId(string $tenantId): string
+    {
+        return ($tenantId === '' || $tenantId === '*') ? '0' : $tenantId;
+    }
+
     public function getUnreadCount(string $userId, ?string $tenantId = null): array
     {
         $query = Message::where('receiver_id', $userId)
@@ -209,15 +259,13 @@ class NotifyService extends BaseService
         if (!$defId) {
             $catId = $messageData['category_id'] ?? null;
             if (!$catId && !empty($messageData['category_key'] ?? null)) {
-                $cat = Category::where('key', $messageData['category_key'])->first();
+                $cat = $this->findCategoryByKey((string)$messageData['category_key'], $tenantId);
                 $catId = $cat ? $cat->id : null;
             }
 
             $modId = $messageData['module_id'] ?? null;
             if (!$modId && !empty($messageData['module_key'] ?? null) && $catId) {
-                $mod = Definition::where('category_id', $catId)
-                    ->where('key', $messageData['module_key'])
-                    ->first();
+                $mod = $this->findDefinition($catId, (string)$messageData['module_key'], $tenantId);
                 $modId = $mod ? $mod->id : null;
             }
 

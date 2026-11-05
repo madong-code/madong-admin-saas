@@ -100,11 +100,14 @@ class MessagePusher
         ?string      $actionUrl = null,
         array        $options = []
     ): array {
-        // 1. 解析消息定义 —— 从 DB 自动发现，无论是核心定义还是插件定义
-        //    绕过租户作用域：消息定义是系统级数据，不受租户隔离影响
-        $definition = $this->resolveDefinition($definitionKey);
+        // 1. 先确定目标租户：定义/模板按租户隔离（0=平台默认，T=租户私有）
+        //    显式传入 > 自动从上下文解析 > 单租户默认 '*'
+        $tenantId = $this->resolveTenantId($options['tenant_id'] ?? null);
+
+        // 2. 解析消息定义 —— 从 DB 自动发现，无论是核心定义还是插件定义
+        $definition = $this->resolveDefinition($definitionKey, $tenantId);
         if ($definition === null) {
-            Logger::warning("MessagePusher: 消息定义未找到", ['key' => $definitionKey]);
+            Logger::warning("MessagePusher: 消息定义未找到", ['key' => $definitionKey, 'tenant_id' => $tenantId]);
             return ['push_count' => 0, 'messages' => []];
         }
 
@@ -138,10 +141,6 @@ class MessagePusher
                 ? json_encode($options['extra_data'], JSON_UNESCAPED_UNICODE)
                 : $options['extra_data'];
         }
-
-        // 3. 确定目标租户
-        //    显式传入 > 自动从上下文解析 > 单租户默认 '*'
-        $tenantId = $this->resolveTenantId($options['tenant_id'] ?? null);
 
         // 4. 组装推送数据
         $pushData = array_merge(
@@ -263,7 +262,8 @@ class MessagePusher
         ?string      $actionUrl = null,
         array        $options = []
     ): array {
-        $definition = $this->resolveDefinition($definitionKey);
+        $tenantId   = $this->resolveTenantId($options['tenant_id'] ?? null);
+        $definition = $this->resolveDefinition($definitionKey, $tenantId);
         if ($definition === null) {
             return ['push_count' => 0, 'messages' => []];
         }
@@ -277,7 +277,7 @@ class MessagePusher
         // 渲染内容（从模板加载）
         $content = $options['content'] ?? '';
         if (empty($content)) {
-            $templateContent = $this->resolveTemplate($definition->id);
+            $templateContent = $this->resolveTemplate($definition->id, $tenantId);
             if ($templateContent !== null) {
                 $content = strtr($templateContent, $templateVars);
             }
@@ -306,25 +306,33 @@ class MessagePusher
      * 解析消息定义
      *
      * 按 definitionKey 从 sys_message_definition 表查找。
-     * 无论是核心定义还是插件定义，统一从数据库自动发现。
-     * 同请求内结果做静态缓存，避免重复查库。
+     * 消息定义按租户隔离（0=平台默认，T=租户私有），租户行优先。
+     * 同请求内结果做静态缓存（按租户+key），避免重复查库。
      */
-    private function resolveDefinition(string $definitionKey): ?Definition
+    private function resolveDefinition(string $definitionKey, string $tenantId): ?Definition
     {
-        if (array_key_exists($definitionKey, $this->definitionCache)) {
-            return $this->definitionCache[$definitionKey];
+        $cacheKey = $tenantId . '::' . $definitionKey;
+        if (array_key_exists($cacheKey, $this->definitionCache)) {
+            return $this->definitionCache[$cacheKey];
         }
 
-        // 绕过租户作用域：消息定义是系统级数据（tenant_id=0），不受租户隔离影响
-        $definition = Definition::withoutGlobalScopes()
+        $query = Definition::withoutGlobalScopes()
             ->where('key', $definitionKey)
-            ->where('enabled', 1)
-            ->first();
+            ->where('enabled', 1);
 
-        $this->definitionCache[$definitionKey] = $definition;
+        if ($tenantId !== '' && $tenantId !== '*') {
+            $query->whereIn('tenant_id', ['0', $tenantId])
+                ->orderByRaw('CASE WHEN tenant_id = 0 THEN 1 ELSE 0 END');
+        } else {
+            $query->where('tenant_id', 0);
+        }
+
+        $definition = $query->first();
+
+        $this->definitionCache[$cacheKey] = $definition;
 
         if ($definition === null) {
-            Logger::warning("MessagePusher: 消息定义未找到", ['key' => $definitionKey]);
+            Logger::warning("MessagePusher: 消息定义未找到", ['key' => $definitionKey, 'tenant_id' => $tenantId]);
         }
 
         return $definition;
@@ -333,19 +341,27 @@ class MessagePusher
     /**
      * 获取定义的默认模板内容（system 渠道优先）
      */
-    private function resolveTemplate(int|string $definitionId): ?string
+    private function resolveTemplate(int|string $definitionId, string $tenantId): ?string
     {
-        $cacheKey = (string)$definitionId;
+        $cacheKey = $tenantId . '::' . $definitionId;
         if (array_key_exists($cacheKey, $this->templateCache)) {
             return $this->templateCache[$cacheKey];
         }
 
-        // 绕过租户作用域：模板是系统级数据，不受租户隔离影响
-        $template = Template::withoutGlobalScopes()
+        $query = Template::withoutGlobalScopes()
             ->whereHas('definitions', function ($q) use ($definitionId) {
-                $q->where('definition_id', $definitionId);
+                $q->withoutGlobalScopes()->where('definition_id', $definitionId);
             })
-            ->where('enabled', 1)
+            ->where('enabled', 1);
+
+        if ($tenantId !== '' && $tenantId !== '*') {
+            $query->whereIn('tenant_id', ['0', $tenantId])
+                ->orderByRaw('CASE WHEN tenant_id = 0 THEN 1 ELSE 0 END');
+        } else {
+            $query->where('tenant_id', 0);
+        }
+
+        $template = $query
             ->orderByRaw("FIELD(type, 'system', 'email', 'sms', 'webhook')")
             ->first();
 
