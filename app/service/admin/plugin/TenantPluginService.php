@@ -20,6 +20,7 @@ use app\model\tenant\Tenant;
 use app\service\core\plugin\PluginBaseService;
 use app\service\core\plugin\PluginService;
 use app\service\core\plugin\TenantMenuSyncService;
+use app\service\core\plugin\TenantMessageSyncService;
 use app\service\core\plugin\TenantPluginConfigService;
 use app\service\core\plugin\TenantPluginMigrationService;
 use core\business\tenant\TenantConnectionManager;
@@ -407,10 +408,15 @@ class TenantPluginService extends PluginBaseService
         $menuStats = $this->syncPluginMenu((string)$tenantId, $pluginKey, $version, 'install');
         yield Sse::progress(
             sprintf('插件菜单安装完成（新增 %d，更新 %d）', $menuStats['inserted'] ?? 0, $menuStats['updated'] ?? 0),
-            90
+            85
         );
 
-        // 3. 记录租户插件信息（含隔离模式）
+        // 3. 导入插件消息数据（按租户隔离模式落到正确的库与 tenant_id）
+        yield Sse::progress('导入插件消息数据', 90, ['plugin' => $pluginKey]);
+        $this->syncPluginMessage((string)$tenantId, $pluginKey, $isolationMode);
+        yield Sse::progress('插件消息数据导入完成', 93);
+
+        // 4. 记录租户插件信息（含隔离模式）
         $this->createTenantPluginRecord((string)$tenantId, $pluginKey, $version, $isolationMode);
         yield Sse::progress('租户插件信息记录成功', 96);
 
@@ -504,6 +510,11 @@ class TenantPluginService extends PluginBaseService
         yield Sse::progress('清理插件菜单', 70, ['plugin' => $pluginKey]);
         $this->clearPluginMenus((string)$tenantId, $pluginKey, $isolationMode);
         yield Sse::progress('插件菜单清理完成', 85, ['plugin' => $pluginKey]);
+
+        // 2.1 清理该租户的插件消息数据（不影响其他租户与平台数据）
+        yield Sse::progress('清理插件消息数据', 88, ['plugin' => $pluginKey]);
+        $this->purgePluginMessage((string)$tenantId, $pluginKey, $isolationMode);
+        yield Sse::progress('插件消息数据清理完成', 90, ['plugin' => $pluginKey]);
 
         // 3. 保留授权记录，仅重置安装状态（与平台授权列表保持一致）
         $existing->fill([
@@ -714,6 +725,37 @@ class TenantPluginService extends PluginBaseService
     }
 
     /**
+     * 同步插件消息数据到租户（分类/定义/模板）
+     *
+     * 消息数据是插件业务数据的一部分，失败不阻断安装主流程：
+     * 失败仅记录日志，安装结果仍以菜单/记录为准，可后续重新安装补齐。
+     */
+    protected function syncPluginMessage(string $tenantId, string $pluginKey, string $isolationMode): void
+    {
+        try {
+            /** @var TenantMessageSyncService $messageService */
+            $messageService = Container::make(TenantMessageSyncService::class);
+            $messageService->sync($pluginKey, $tenantId, $isolationMode);
+        } catch (\Throwable $e) {
+            // 消息数据同步失败不阻断安装
+        }
+    }
+
+    /**
+     * 清理租户的插件消息数据
+     */
+    protected function purgePluginMessage(string $tenantId, string $pluginKey, string $isolationMode): void
+    {
+        try {
+            /** @var TenantMessageSyncService $messageService */
+            $messageService = Container::make(TenantMessageSyncService::class);
+            $messageService->purge($pluginKey, $tenantId, $isolationMode);
+        } catch (\Throwable $e) {
+            // 消息数据清理失败不阻断卸载
+        }
+    }
+
+    /**
      * 查找插件菜单文件路径（resource/data/menu/admin.php 或 resource/menu/admin.php）
      */
     protected function findPluginMenuFile(string $pluginKey): ?string
@@ -841,10 +883,7 @@ class TenantPluginService extends PluginBaseService
                 'updated_at'     => $now,
             ];
             $authRecord = $this->dao->getModel()->create($authData);
-            TenantPluginInstall::query()->create(array_merge($runtimeData, [
-                'id'         => $authRecord->id,
-                'created_at' => $now,
-            ]));
+            $this->saveTenantInstallRecord($tenantId, $pluginKey, $authRecord->id, $runtimeData, $now);
             return;
         }
 
@@ -859,16 +898,31 @@ class TenantPluginService extends PluginBaseService
         ]);
         $existing->save();
 
-        $runtime = $existing->install;
-        if (!$runtime) {
-            TenantPluginInstall::query()->create(array_merge($runtimeData, [
-                'id'         => $existing->id,
-                'created_at' => $now,
-            ]));
-        } else {
+        $this->saveTenantInstallRecord($tenantId, $pluginKey, $existing->id, $runtimeData, $now);
+    }
+
+    /**
+     * 幂等写入运行态记录(saas_tenant_plugin_install)
+     *
+     * 历史环境下可能存在"授权表缺失但运行态表残留"的孤儿记录，
+     * 直接 create 会撞 uk_tenant_plugin_install 唯一索引导致安装失败。
+     */
+    protected function saveTenantInstallRecord(string $tenantId, string $pluginKey, string|int $id, array $runtimeData, int $now): void
+    {
+        $runtime = TenantPluginInstall::where('tenant_id', $tenantId)
+            ->where('plugin_key', $pluginKey)
+            ->first();
+
+        if ($runtime) {
             $runtime->fill($runtimeData);
             $runtime->save();
+            return;
         }
+
+        TenantPluginInstall::query()->create(array_merge($runtimeData, [
+            'id'         => $id,
+            'created_at' => $now,
+        ]));
     }
 
     /**
