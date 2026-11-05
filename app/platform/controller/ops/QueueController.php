@@ -99,20 +99,38 @@ final class QueueController extends Base
     public function send(Request $request): \support\Response
     {
         try {
-            $queueName = $request->route->param('name');
-            $data = $request->post('data', []);
-            
-            if (empty($queueName)) {
+            $queueName = (string)$request->route->param('name');
+            $data      = $request->post('data', []);
+
+            if ($queueName === '') {
                 return Json::fail('队列名称不能为空', [], 400);
+            }
+            $allowedQueues = array_column($this->availableQueues, 'name');
+            if (!in_array($queueName, $allowedQueues, true)) {
+                return Json::fail('不支持的队列', [], 400);
+            }
+            if (!is_array($data)) {
+                return Json::fail('消息数据格式不正确', [], 400);
+            }
+
+            // 文件删除队列只允许携带已归一化的导出文件名，防止越界路径注入
+            if ($queueName === 'remove-excel-file') {
+                try {
+                    $data = [
+                        'file_path' => \core\io\excel\ExportPathGuard::normalize((string)($data['file_path'] ?? '')),
+                    ];
+                } catch (\InvalidArgumentException $e) {
+                    return Json::fail('非法的导出文件路径', [], 400);
+                }
             }
 
             $client = new Client();
             $client->send($queueName, $data);
-            
+
             return Json::success('消息已发送到队列', [
                 'queue' => $queueName,
-                'data' => $data,
-                'time' => date('Y-m-d H:i:s'),
+                'data'  => $data,
+                'time'  => date('Y-m-d H:i:s'),
             ]);
         } catch (\Throwable $e) {
             return Json::fail($e->getMessage());

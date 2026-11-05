@@ -57,8 +57,18 @@ class ExcelExportService
             // 生成下载链接
             $downloadInfo                        = self::generateDownloadInfo($fileInfo['path'], $params);
             $downloadInfo['params']['file_path'] = $fileInfo['download_path'];
+            // 查询参数统一编码，避免文件名中的 & = 等字符污染下载 URL
+            $query = http_build_query(
+                [
+                    'file_path' => $downloadInfo['params']['file_path'],
+                    'file'      => $downloadInfo['params']['file'] ?? '',
+                ],
+                '',
+                '&',
+                PHP_QUERY_RFC3986
+            );
             return [
-                'url'    => $downloadInfo['url'] . '?file_path=' . $downloadInfo['params']['file_path'] . '&file=' . $downloadInfo['params']['file'],
+                'url'    => $downloadInfo['url'] . '?' . $query,
                 'expire' => $downloadInfo['expire'],
                 'params' => $downloadInfo['params'],
             ];
@@ -203,7 +213,8 @@ class ExcelExportService
      */
     private static function sanitizeFilename(string $name): string
     {
-        return preg_replace('/[\/\\\?\*\[\]]/', '', $name);
+        // 统一走路径守卫：禁止 ..、路径分隔符及会污染下载 URL 查询串的字符
+        return ExportPathGuard::sanitizeFilename($name);
     }
 
     /**
@@ -222,7 +233,8 @@ class ExcelExportService
     {
         $fileName = self::sanitizeFilename($params['filename'] ?? 'export_' . date('YmdHis'));
 //        $path        = '/exports/' . date('Ym') . '/';
-        $path        = '/exports/';//临时文件取消月份用完就删除
+        // 与 ExportPathGuard::EXPORT_DIR 保持一致，改动需同步路径守卫白名单
+        $path        = '/' . ExportPathGuard::EXPORT_DIR . '/';//临时文件取消月份用完就删除
         $storagePath = runtime_path() . $path;
 
         // 目录创建带重试机制（增强健壮性）

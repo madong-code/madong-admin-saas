@@ -19,6 +19,7 @@ use app\adminapi\CurrentUser;
 use app\adminapi\middleware\AccessTokenMiddleware;
 use app\adminapi\middleware\OperationMiddleware;
 use app\adminapi\middleware\PermissionMiddleware;
+use app\adminapi\schema\request\system\UploadDownloadExcelRequest;
 use app\adminapi\schema\request\system\UploadQueryRequest;
 use app\adminapi\schema\response\system\UploadResponse;
 use app\schema\request\BatchDeleteRequest;
@@ -26,6 +27,8 @@ use app\schema\request\IdRequest;
 use app\service\admin\system\config\UploadService;
 use core\foundation\exception\handler\AdminException;
 use core\foundation\tool\Json;
+use core\infrastructure\logger\Logger;
+use core\io\excel\ExportPathGuard;
 use core\io\upload\support\StorageUrl;
 use core\io\upload\UploadScene;
 use madong\swagger\annotation\response\PageResponse;
@@ -411,19 +414,34 @@ final class FilesController extends Crud
         path: '/system/export/download-excel',
         summary: '下载导出的excel',//下载导出的excel-后期需要优化实现下载成功后删除原文件
         tags: ['附件管理'],
+        x: [
+            SchemaConstants::X_SCHEMA_REQUEST => UploadDownloadExcelRequest::class,
+        ]
     )]
     #[Permission(code: 'upload:files:download_excel')]
     public function downloadExcel(Request $request): ?\support\Response
     {
+        try {
+            // 只取白名单字段，禁止把 $request->all() 的内容直接拼到 runtime_path()
+            $file = $request->input('file_path', '');
+            if (!is_string($file)) {
+                throw new \InvalidArgumentException('file_path 必须为字符串');
+            }
+            $safeRelative = ExportPathGuard::normalize($file);
+            $filePath     = ExportPathGuard::resolve($safeRelative);
 
-        $param        = $request->all();
-        $file         = $param['file_path'];//文件路径
-        $downloadName = $param['file'] ?? date('Y-m-d His', time());//文件下载名称
-        $filePath     = runtime_path() . $file;
-        //生成的文件5分钟后超时自动删除
-        $queue = 'remove-excel-file';
-        Client::send($queue, $param, 300);
-        return response()->download($filePath, $downloadName);
+            $downloadName = $request->input('file');
+            $downloadName = ExportPathGuard::sanitizeDownloadName(
+                is_string($downloadName) && $downloadName !== '' ? $downloadName : date('Y-m-d His')
+            );
+
+            //生成的文件5分钟后超时自动删除，队列只投递已校验的导出相对文件名
+            Client::send('remove-excel-file', ['file_path' => $safeRelative], 300);
+            return response()->download($filePath, $downloadName);
+        } catch (\InvalidArgumentException $e) {
+            Logger::warning('[downloadExcel] 拒绝非法导出文件路径', ['reason' => $e->getMessage()]);
+            return Json::fail('非法的导出文件路径');
+        }
     }
 
     #[OA\Post(
