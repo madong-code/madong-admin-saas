@@ -27,6 +27,16 @@ plugin/*
 !plugin/example/
 !plugin/demo/
 
-# 忽略tests目录下除了之外的内容
+# 忽略 tests 目录下的临时产物，保留回归用例与脚手架
 tests/*
 !tests/.gitkeep
+!tests/Bootstrap.php
+!tests/Support/
+!tests/Support/TestJwtToken.php
+!tests/saas/
+!tests/saas/SecurityExportPathTest.php
+!tests/saas/SecurityJwtSecretTest.php
+!tests/saas/SecurityPlatformAuthTest.php
+!tests/integration/
+!tests/integration/SecurityConfigTest.php
+!tests/integration/InstallCommandTenantTest.php
