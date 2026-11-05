@@ -136,12 +136,15 @@ class PluginUninstallService extends PluginBaseService
             $installInstance->setContext($context);
             if ($tenantId !== null) {
                 $installInstance->setTenantId($tenantId);
-                // DB模式下设置租户数据库连接
-                if (\core\business\tenant\context\TenantContext::getIsolationMode() === 'database') {
-                    $connectionName = \core\business\tenant\context\TenantContext::getConnectionName();
-                    if ($connectionName) {
-                        $installInstance->setConnection($connectionName);
-                    }
+                // 按租户自身隔离模式解析连接：平台远程/CLI 场景没有请求租户上下文，
+                // 不能依赖 TenantContext，否则库隔离租户会误操作主库。
+                $dbMode = \app\model\tenant\Tenant::withoutGlobalScopes()
+                    ->where('id', (string)$tenantId)
+                    ->value('database_mode');
+                if ($dbMode === 'database') {
+                    $installInstance->setConnection(
+                        \core\business\tenant\SyncConnection::getConnectionName($tenantId, 'database')
+                    );
                 }
             }
 
@@ -176,6 +179,15 @@ class PluginUninstallService extends PluginBaseService
                     $orchestrator->clearTenantMenu($code, $version, (string)$tenantId);
                 } catch (\Throwable $e) {
                     yield Sse::warning('租户插件菜单清理失败(可稍后重试): ' . $e->getMessage(), [], $sessionUuid);
+                }
+
+                yield Sse::progress('清理租户插件消息数据', 86, [], $sessionUuid);
+                try {
+                    /** @var TenantMessageSyncService $messageService */
+                    $messageService = Container::make(TenantMessageSyncService::class);
+                    $messageService->purge($code, (string)$tenantId);
+                } catch (\Throwable $e) {
+                    yield Sse::warning('租户插件消息数据清理失败(可稍后重试): ' . $e->getMessage(), [], $sessionUuid);
                 }
             }
 

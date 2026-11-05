@@ -15,6 +15,7 @@ namespace app\service\core\tenant;
 
 use app\dao\tenant\TenantMigrationDao;
 use app\model\tenant\Tenant;
+use core\business\tenant\SyncConnection;
 use core\business\tenant\TenantConnectionManager;
 use core\foundation\base\BaseService;
 use core\io\uuid\Snowflake;
@@ -150,6 +151,8 @@ class TenantMigrationService extends BaseService
                         $installer = new $installClass();
                         $installer->setContext('tenant');
                         $installer->setTenantId($tenantId);
+                        // 显式绑定租户库连接：仅切 Context 时 MigrationTrait 仍会落到默认连接（主库）
+                        $installer->setConnection(SyncConnection::getConnectionName($tenantId, 'database'));
 
                         match ($action) {
                             'install' => $installer->install($version),

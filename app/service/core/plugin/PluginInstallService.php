@@ -185,12 +185,15 @@ final class PluginInstallService extends PluginBaseService
             $installInstance->setContext($context);
             if ($tenantId !== null) {
                 $installInstance->setTenantId($tenantId);
-                // DB模式下设置租户数据库连接
-                if (\core\business\tenant\context\TenantContext::getIsolationMode() === 'database') {
-                    $connectionName = \core\business\tenant\context\TenantContext::getConnectionName();
-                    if ($connectionName) {
-                        $installInstance->setConnection($connectionName);
-                    }
+                // 按租户自身隔离模式解析连接：平台远程/CLI 场景没有请求租户上下文，
+                // 不能依赖 TenantContext，否则库隔离租户的迁移/数据会落到主库。
+                $dbMode = \app\model\tenant\Tenant::withoutGlobalScopes()
+                    ->where('id', (string)$tenantId)
+                    ->value('database_mode');
+                if ($dbMode === 'database') {
+                    $installInstance->setConnection(
+                        \core\business\tenant\SyncConnection::getConnectionName($tenantId, 'database')
+                    );
                 }
             }
 
@@ -233,9 +236,19 @@ final class PluginInstallService extends PluginBaseService
                     /** @var \app\service\core\plugin\PluginLifecycleOrchestrator $orchestrator */
                     $orchestrator = Container::make(PluginLifecycleOrchestrator::class);
                     $orchestrator->syncTenantMenu($code, $version, (string)$tenantId);
-                    yield Sse::progress('插件菜单同步完成', 92, [], $sessionUuid);
+                    yield Sse::progress('插件菜单同步完成', 90, [], $sessionUuid);
                 } catch (\Throwable $e) {
                     yield Sse::warning('插件菜单同步失败(可稍后重试): ' . $e->getMessage(), [], $sessionUuid);
+                }
+
+                yield Sse::progress('开始同步插件消息数据到租户', 91, [], $sessionUuid);
+                try {
+                    /** @var TenantMessageSyncService $messageService */
+                    $messageService = Container::make(TenantMessageSyncService::class);
+                    $messageService->sync($code, (string)$tenantId);
+                    yield Sse::progress('插件消息数据同步完成', 92, [], $sessionUuid);
+                } catch (\Throwable $e) {
+                    yield Sse::warning('插件消息数据同步失败(可稍后重试): ' . $e->getMessage(), [], $sessionUuid);
                 }
             }
 

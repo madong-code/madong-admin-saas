@@ -287,11 +287,14 @@ class PluginInstall
 
     /**
      * 是否为DB模式租户安装
+     *
+     * 优先看调用方显式传入的连接（平台远程/批量/队列场景下请求上下文可能没有租户信息），
+     * 其次才回退到租户上下文的隔离模式。
      */
     protected function isTenantDbMode(): bool
     {
         return $this->context === 'tenant'
-            && TenantContext::getIsolationMode() === 'database';
+            && ($this->connection !== null || TenantContext::getIsolationMode() === 'database');
     }
 
     /**
@@ -335,12 +338,13 @@ class PluginInstall
         //  - 单体(single)        : 主库建表
         //  - 平台(field 隔离)     : 主库建表(字段隔离共享主库表)
         //  - 平台(database 隔离) : 仅代码, 不建表(表由"租户安装模块"在租户库创建)
-        //  - 租户(database 隔离) : 租户库建表(上下文 + 连接已设为租户)
+        //  - 租户(database 隔离) : 租户库建表(连接已设为租户)
         //  - 租户(field 隔离)    : 跳过(共享主库表由平台建)
         $isDbPlatform = $this->isPlatformContext()
             && !TenantContext::isSingleMode()
             && TenantContext::getIsolationMode() === 'database';
-        if (!$isDbPlatform) {
+        $isFieldTenant = !$this->isPlatformContext() && !$this->isTenantDbMode();
+        if (!$isDbPlatform && !$isFieldTenant) {
             $this->runMigrations();
             $this->runSeeds();
         }
@@ -576,21 +580,35 @@ class PluginInstall
      *   ]],
      * ]
      *
-     * 幂等：分类 source+key、定义 category_id+key、模板 type+key；
+     * 幂等：分类 tenant_id+source+key、定义 tenant_id+category_id+key、模板 tenant_id+type+key；
      * sync 模式会同时删除本来源中数据文件已移除的节点，重复安装不会产生脏数据。
+     *
+     * 多租户平台安装只做"上架"，不写消息数据；租户安装由 TenantMessageSyncService 负责落库。
      */
     protected function importMessageData(): void
     {
+        // 多租户平台层安装 = 仅"上架"，消息数据由租户安装时按租户导入，
+        // 避免平台安装把插件数据写进主库、与后续租户数据互相污染。
+        if ($this->isPlatformContext() && !TenantContext::isSingleMode()) {
+            $this->output('  ℹ️ Multi-tenant mode: plugin message data is imported on tenant install, skip');
+            return;
+        }
+
         $categories = $this->loadMessageFile();
         if ($categories === null) {
             return;
         }
 
-        $stat = (new MessageDataSync('plugin:' . $this->getPluginName()))
-            ->sync($categories, MessageDataSync::MODE_SYNC);
+        // 显式指定租户与连接：不依赖请求上下文，避免被 TenantScope / creating 自动填充改写
+        $stat = (new MessageDataSync(
+            'plugin:' . $this->getPluginName(),
+            $this->messageTenantId(),
+            $this->connection
+        ))->sync($categories, MessageDataSync::MODE_SYNC);
 
         $this->output(sprintf(
-            '  ✅ Imported plugin message data (created %d, updated %d, deleted %d)',
+            '  ✅ Imported plugin message data (tenant %s, created %d, updated %d, deleted %d)',
+            $this->messageTenantId(),
             $stat['created'],
             $stat['updated'],
             $stat['deleted']
@@ -598,20 +616,33 @@ class PluginInstall
     }
 
     /**
+     * 消息数据归属的租户标识
+     *
+     * 租户安装 → 该租户ID；平台/单体安装 → 0（平台默认数据）
+     */
+    protected function messageTenantId(): string
+    {
+        if ($this->context === 'tenant' && $this->tenantId !== null && $this->tenantId !== '') {
+            return (string)$this->tenantId;
+        }
+        return '0';
+    }
+
+    /**
      * 清理插件消息数据
      *
-     * 按 source=plugin:{name} 精确清理分类/定义/模板及其关联，
-     * 不影响 source=system（框架）与 source=user（后台自建）的数据。
-     * 消息数据为平台级共享数据（tenant_id 为空），因此仅平台上下文执行清理。
+     * 按 source=plugin:{name} + tenant_id 精确清理分类/定义/模板及其关联，
+     * 不影响 source=system（框架）、source=user（后台自建）以及其他租户的数据。
      */
     protected function clearMessageData(): void
     {
-        if (!$this->isPlatformContext()) {
-            return;
-        }
+        $deleted = (new MessageDataSync(
+            'plugin:' . $this->getPluginName(),
+            $this->messageTenantId(),
+            $this->connection
+        ))->purge();
 
-        $deleted = (new MessageDataSync('plugin:' . $this->getPluginName()))->purge();
-        $this->output("  ✅ Cleared plugin message data (deleted {$deleted})");
+        $this->output("  ✅ Cleared plugin message data (tenant {$this->messageTenantId()}, deleted {$deleted})");
     }
 
     /**

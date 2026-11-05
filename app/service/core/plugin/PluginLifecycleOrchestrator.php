@@ -23,6 +23,7 @@ use app\event\plugin\PluginUpdated;
 use app\event\plugin\PluginUpdating;
 use app\model\plugin\TenantPlugin;
 use app\model\tenant\Tenant;
+use core\business\tenant\SyncConnection;
 use core\business\tenant\context\TenantContext;
 use core\foundation\base\BaseService;
 use core\io\uuid\Snowflake;
@@ -70,6 +71,9 @@ class PluginLifecycleOrchestrator extends BaseService
 {
     /** @var string 事件上下文标识(供 TenantPluginSyncListener 幂等跳过) */
     public const EVENT_CONTEXT = 'orchestrator';
+
+    /** @var array{id: mixed, mode: string}|null 租户上下文快照（用于切换后恢复） */
+    private ?array $tenantContextSnapshot = null;
 
     // ============================================================
     // 七入口
@@ -186,6 +190,7 @@ class PluginLifecycleOrchestrator extends BaseService
         // 幂等: 已存在 enabled 记录直接返回
         if ($existing && (int)$existing->status === 1) {
             $this->logInfo('installForTenant skipped (already installed)', compact('code', 'tenantId'));
+            $this->restoreTenantContext();
             return [
                 'stage' => 'install',
                 'scope' => 'tenant',
@@ -196,6 +201,7 @@ class PluginLifecycleOrchestrator extends BaseService
         }
 
         $mode = $this->resolveIsolationMode((string)$tenantId);
+        $connection = $this->resolveConnectionName((string)$tenantId, $mode);
         $this->upsertTenantRecord($tenantId, $code, $version, 'running');
 
         try {
@@ -207,12 +213,16 @@ class PluginLifecycleOrchestrator extends BaseService
             $this->notifyStep($progressCb, '数据库迁移文件执行完成');
 
             $this->notifyStep($progressCb, '执行安装钩子');
-            $this->executePluginMethodSilent($code, 'install', $version);
+            $this->executePluginMethodSilent($code, 'install', $version, null, (string)$tenantId, $connection);
             $this->notifyStep($progressCb, '安装钩子执行完成');
 
             $this->notifyStep($progressCb, '开始导入插件菜单');
             $this->applyMenuSync($code, $version, (string)$tenantId, 'install');
             $this->notifyStep($progressCb, '插件菜单导入完成');
+
+            $this->notifyStep($progressCb, '开始导入插件消息数据');
+            $this->applyMessageSync($code, (string)$tenantId, $mode, 'install');
+            $this->notifyStep($progressCb, '插件消息数据导入完成');
 
             (new PluginInstalled($code, $version, ['tenant_id' => $tenantId], self::EVENT_CONTEXT))->dispatch();
 
@@ -229,6 +239,8 @@ class PluginLifecycleOrchestrator extends BaseService
             $this->upsertTenantRecord($tenantId, $code, $version, 'failed', $e->getMessage());
             $this->logError('installForTenant failed', $e, compact('code', 'tenantId'));
             throw $e;
+        } finally {
+            $this->restoreTenantContext();
         }
     }
 
@@ -245,7 +257,8 @@ class PluginLifecycleOrchestrator extends BaseService
         $existing = $dao->findByTenantAndKey($tenantId, $code);
 
         if (!$existing) {
-            // 未安装: 升级前自动 install
+            // 未安装: 升级前自动 install（先恢复上下文，由 installForTenant 自己接管）
+            $this->restoreTenantContext();
             return $this->installForTenant($code, $version, $tenantId, $opts, $progressCb);
         }
 
@@ -255,6 +268,7 @@ class PluginLifecycleOrchestrator extends BaseService
         [$allowed, $reasonCode] = $existing->canUpgrade($version);
         if (!$allowed) {
             $this->logInfo("updateForTenant skipped ({$reasonCode})", compact('code', 'tenantId', 'fromVersion'));
+            $this->restoreTenantContext();
             return [
                 'stage'     => 'update',
                 'scope'     => 'tenant',
@@ -267,6 +281,7 @@ class PluginLifecycleOrchestrator extends BaseService
         }
 
         $mode = $this->resolveIsolationMode((string)$tenantId);
+        $connection = $this->resolveConnectionName((string)$tenantId, $mode);
         $this->upsertTenantRecord($tenantId, $code, $version, 'running');
 
         try {
@@ -278,12 +293,16 @@ class PluginLifecycleOrchestrator extends BaseService
             $this->notifyStep($progressCb, '数据库迁移文件执行完成');
 
             $this->notifyStep($progressCb, '执行升级钩子');
-            $this->executePluginMethodSilent($code, 'update', $version, $fromVersion);
+            $this->executePluginMethodSilent($code, 'update', $version, $fromVersion, (string)$tenantId, $connection);
             $this->notifyStep($progressCb, '升级钩子执行完成');
 
             $this->notifyStep($progressCb, '开始更新插件菜单');
             $this->applyMenuSync($code, $version, (string)$tenantId, 'update');
             $this->notifyStep($progressCb, '插件菜单更新完成');
+
+            $this->notifyStep($progressCb, '开始更新插件消息数据');
+            $this->applyMessageSync($code, (string)$tenantId, $mode, 'update');
+            $this->notifyStep($progressCb, '插件消息数据更新完成');
 
             (new PluginUpdated($code, $version, ['tenant_id' => $tenantId, 'from' => $fromVersion], self::EVENT_CONTEXT))->dispatch();
 
@@ -301,6 +320,8 @@ class PluginLifecycleOrchestrator extends BaseService
             $this->upsertTenantRecord($tenantId, $code, $version, 'failed', $e->getMessage());
             $this->logError('updateForTenant failed', $e, compact('code', 'tenantId'));
             throw $e;
+        } finally {
+            $this->restoreTenantContext();
         }
     }
 
@@ -319,6 +340,7 @@ class PluginLifecycleOrchestrator extends BaseService
         // 幂等: 授权记录不存在时, 仍要清理可能残留的运行态孤儿记录
         if (!$existing) {
             $this->clearTenantInstallRecord((string)$tenantId, $code);
+            $this->restoreTenantContext();
             return [
                 'stage' => 'uninstall',
                 'scope' => 'tenant',
@@ -374,6 +396,11 @@ class PluginLifecycleOrchestrator extends BaseService
                 $this->logError('clear tenant menus failed (ignored)', $e, compact('code', 'tenantId'));
             }
 
+            // 消息数据清理: 只清该租户 source=plugin:{key} 的数据, 不影响其他租户与平台数据
+            $this->notifyStep($progressCb, '开始清理插件消息数据');
+            $this->applyMessageSync($code, (string)$tenantId, $mode, 'uninstall');
+            $this->notifyStep($progressCb, '插件消息数据清理完成');
+
             // 清理残留产物(菜单/配置): 尽力而为, 失败不阻断后续核心清理。
             // 否则 TenantPluginConfigService::delete 等在租户上下文连名未配置时会抛异常,
             // 跳过 clearTenantInstallRecord, 导致运行态残留、UI 仍显示"已安装"。
@@ -419,6 +446,8 @@ class PluginLifecycleOrchestrator extends BaseService
             $this->upsertTenantRecord($tenantId, $code, $version, 'failed', $e->getMessage());
             $this->logError('uninstallForTenant failed', $e, compact('code', 'tenantId'));
             throw $e;
+        } finally {
+            $this->restoreTenantContext();
         }
     }
 
@@ -481,7 +510,7 @@ class PluginLifecycleOrchestrator extends BaseService
 
         foreach ($targets as $tid) {
             try {
-                $this->markTenantContext($tid);
+                // uninstallForTenant 内部会自行切换/恢复租户上下文
                 $this->uninstallForTenant($code, $version, $tid, $opts);
                 $tenantResults[$tid] = 'success';
             } catch (\Throwable $e) {
@@ -516,19 +545,42 @@ class PluginLifecycleOrchestrator extends BaseService
 
     /**
      * 调 PluginBaseService::executePluginMethod (CLI 静默同步路径, 抛异常)
+     *
+     * 必须显式透传租户与连接：批量/队列/平台远程场景没有请求级租户上下文，
+     * 否则插件 Install 会以 platform 身份执行并落到主库。
      */
-    protected function executePluginMethodSilent(string $code, string $action, ?string $version = null, ?string $oldVersion = null): void
-    {
-        // 走 PluginBaseService 提供的同步入口, silent=true → 失败统一抛
-        /** @var \app\service\core\plugin\PluginBaseService $runner */
+    protected function executePluginMethodSilent(
+        string $code,
+        string $action,
+        ?string $version = null,
+        ?string $oldVersion = null,
+        ?string $tenantId = null,
+        ?string $connection = null
+    ): void {
+        /** @var PluginBaseService $runner */
         $runner = new class extends PluginBaseService {
-            public function run(string $code, string $action, ?string $version, ?string $oldVersion): bool
-            {
-                return $this->executePluginMethod($code, $action, $version, $oldVersion, false);
+            public function run(
+                string $code,
+                string $action,
+                ?string $version,
+                ?string $oldVersion,
+                ?string $tenantId,
+                ?string $connection
+            ): bool {
+                return $this->executePluginMethod(
+                    $code,
+                    $action,
+                    $version,
+                    $oldVersion,
+                    false,
+                    $tenantId === null ? null : 'tenant',
+                    $tenantId,
+                    $connection
+                );
             }
         };
 
-        $runner->run($code, $action, $version, $oldVersion);
+        $runner->run($code, $action, $version, $oldVersion, $tenantId, $connection);
     }
 
     /**
@@ -638,6 +690,39 @@ class PluginLifecycleOrchestrator extends BaseService
         $menu = Container::make(TenantMenuSyncService::class);
         $diff = $menu->diff($tenantId, $code, $manifest);
         $menu->apply($tenantId, $code, $diff, $version);
+    }
+
+    /**
+     * 同步/清理插件消息数据（按租户隔离模式落到正确的库与 tenant_id）
+     *
+     * 消息数据属于插件业务数据，失败不阻断安装/卸载主流程，仅记录日志。
+     */
+    protected function applyMessageSync(string $code, string $tenantId, string $mode, string $action): void
+    {
+        try {
+            /** @var TenantMessageSyncService $message */
+            $message = Container::make(TenantMessageSyncService::class);
+
+            if ($action === 'uninstall') {
+                $message->purge($code, $tenantId, $mode);
+                return;
+            }
+
+            $message->sync($code, $tenantId, $mode);
+        } catch (\Throwable $e) {
+            $this->logError('sync tenant message data failed (ignored)', $e, compact('code', 'tenantId', 'mode', 'action'));
+        }
+    }
+
+    /**
+     * 按租户隔离模式解析连接名
+     *
+     * 只有库隔离才返回显式连接（tenant_{id}）；
+     * 字段隔离返回 null，保持"共享主库"语义，避免被误判为库隔离而触发迁移/回滚。
+     */
+    protected function resolveConnectionName(string $tenantId, string $mode): ?string
+    {
+        return $mode === 'database' ? SyncConnection::getConnectionName($tenantId, 'database') : null;
     }
 
     /**
@@ -854,16 +939,52 @@ class PluginLifecycleOrchestrator extends BaseService
     /**
      * 临时切换租户上下文(供 installForTenant/updateForTenant/uninstallForTenant)
      *
-     * 注: TenantContext 静态状态切换需谨慎, 这里只在调用栈内有效.
-     * 若 TenantContext 不支持 setTenantId, 则降级为不切换(由 installClass 自取).
+     * 切换前记录快照，调用方在 finally 中通过 restoreTenantContext() 恢复，
+     * 避免批量/队列循环把上一个租户的上下文泄漏给后续请求。
      */
     protected function markTenantContext(string $tenantId): void
     {
+        $this->tenantContextSnapshot = [
+            'id'   => TenantContext::getTenantId(),
+            'mode' => TenantContext::getIsolationMode(),
+        ];
+
         try {
-            TenantContext::setTenantId($tenantId);
+            // 注意: TenantContext 没有 setTenantId()，此前调用会落到 __callStatic 的 setData，
+            // 实际从未切换租户上下文（静默无效）。这里改为真正的 setTenant + 隔离模式。
+            TenantContext::setTenant($tenantId);
+
+            $mode = $this->resolveIsolationMode($tenantId);
+            if (in_array($mode, ['field', 'database'], true)) {
+                TenantContext::setIsolationMode($mode);
+            }
         } catch (\Throwable $e) {
-            // 静默降级: 不支持 setTenantId 时, 后续 installClass 仍可通过自身上下文感知
-            $this->logInfo('TenantContext::setTenantId unavailable, skipping', compact('tenantId'));
+            $this->logError('mark tenant context failed (ignored)', $e, compact('tenantId'));
+        }
+    }
+
+    /**
+     * 恢复 markTenantContext() 之前的租户上下文
+     */
+    protected function restoreTenantContext(): void
+    {
+        if ($this->tenantContextSnapshot === null) {
+            return;
+        }
+
+        $snapshot = $this->tenantContextSnapshot;
+        $this->tenantContextSnapshot = null;
+
+        try {
+            if ($snapshot['id'] === null || $snapshot['id'] === '') {
+                TenantContext::clear();
+                return;
+            }
+
+            TenantContext::setTenant($snapshot['id']);
+            TenantContext::setIsolationMode((string)$snapshot['mode']);
+        } catch (\Throwable $e) {
+            $this->logError('restore tenant context failed (ignored)', $e, $snapshot);
         }
     }
 

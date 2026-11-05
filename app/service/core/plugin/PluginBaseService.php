@@ -111,11 +111,22 @@ abstract class PluginBaseService extends BaseService
      * @param string|null $version 版本（对于 install 是目标版本，对于 update 是新版本）
      * @param string|null $oldVersion 旧版本（仅 update 时使用）
      * @param bool $silent 是否静默执行失败（true: 失败不抛出异常, false: 失败抛出异常）
+     * @param string|null $context 安装上下文 platform|tenant
+     * @param string|int|null $tenantId 目标租户ID（tenant 上下文必传）
+     * @param string|null $connection 目标连接名（库隔离租户必传，避免落到主库）
      * @return bool 是否成功执行
      * @throws \Exception 当 silent=false 且执行失败时抛出异常
      */
-    protected function executePluginMethod(string $code, string $action, ?string $version = null, ?string $oldVersion = null, bool $silent = false): bool
-    {
+    protected function executePluginMethod(
+        string $code,
+        string $action,
+        ?string $version = null,
+        ?string $oldVersion = null,
+        bool $silent = false,
+        ?string $context = null,
+        string|int|null $tenantId = null,
+        ?string $connection = null
+    ): bool {
         $className = "plugin\\" . $code . "\\Install";
         if (!class_exists($className)) {
             // 插件未提供 Install 类，静默跳过
@@ -128,6 +139,17 @@ abstract class PluginBaseService extends BaseService
 
             // 实例化插件 Install 类
             $installInstance = new $className();
+
+            // 显式透传上下文：批量/队列/平台远程场景下请求上下文可能没有租户信息
+            if ($context !== null && method_exists($installInstance, 'setContext')) {
+                $installInstance->setContext($context);
+            }
+            if ($tenantId !== null && method_exists($installInstance, 'setTenantId')) {
+                $installInstance->setTenantId($tenantId);
+            }
+            if ($connection !== null && method_exists($installInstance, 'setConnection')) {
+                $installInstance->setConnection($connection);
+            }
             
             switch ($action) {
                 case 'install':
@@ -194,5 +216,31 @@ abstract class PluginBaseService extends BaseService
     public function callPluginInstallMethod(string $code, string $action, ?string $version = null, ?string $oldVersion = null): bool
     {
         return $this->executePluginMethod($code, $action, $version, $oldVersion, false);
+    }
+
+    /**
+     * 在指定租户上下文中调用插件 Install 类的方法
+     *
+     * 平台远程分发 / 批量 / 队列场景没有请求级租户上下文，
+     * 必须显式传入 tenantId 与 connection，否则迁移与数据会落到主库。
+     */
+    public function callPluginInstallMethodForTenant(
+        string $code,
+        string $action,
+        string|int $tenantId,
+        ?string $version = null,
+        ?string $oldVersion = null,
+        ?string $connection = null
+    ): bool {
+        return $this->executePluginMethod(
+            $code,
+            $action,
+            $version,
+            $oldVersion,
+            false,
+            'tenant',
+            $tenantId,
+            $connection
+        );
     }
 }
