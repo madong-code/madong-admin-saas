@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/Support/TestJwtToken.php';
+require_once __DIR__ . '/Support/ConfigInjector.php';
 
 if (!function_exists('config')) {
     function config(string $key, mixed $default = null): mixed
