@@ -42,12 +42,14 @@ return [
      * 结构: ['端' => '相对路径']
      */
     'template'     => [
+        // 以下是 config/install.php 不可用时的 fallback，采用默认 separated 模式路径
+        // 正常路径由 InstallConfigResolver 按模式 + template_meta.plugin_dir 解析
         // 后台(租户/无租户)模板目标路径
-        'admin'    => 'template/mono/apps/admin/src/plugin',
+        'admin'    => 'template/admin/src/plugin',
         // 平台管理后台模板目标路径
-        'platform' => 'template/mono/apps/platform/src/plugin',
-        // 前台模板目标路径
-        'web'      => 'template/web/app/plugin',
+        'platform' => 'template/platform/src/plugin',
+        // 前台模板目标路径（与 Nuxt srcDir:'src' 下的扫描目录一致）
+        'web'      => 'template/web/src/plugin',
     ],
 
     /**

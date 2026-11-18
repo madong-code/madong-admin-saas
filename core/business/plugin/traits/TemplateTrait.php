@@ -13,18 +13,73 @@ declare(strict_types=1);
  */
 namespace core\business\plugin\traits;
 
+use core\business\install\InstallConfigResolver;
+
 /**
  * 模板资源操作 Trait
  */
 trait TemplateTrait
 {
+    /** 模板分发端点：admin/platform 按模式解析，web 通用 */
+    private const TEMPLATE_ENDPOINTS = ['admin', 'platform', 'web'];
+
+    /** @var InstallConfigResolver|null */
+    private ?InstallConfigResolver $_installConfigResolver = null;
+
     /**
-     * 复制模板资源到目标目录
+     * 获取安装配置解析器（延迟实例化）
+     */
+    private function installConfigResolver(): InstallConfigResolver
+    {
+        if ($this->_installConfigResolver === null) {
+            $this->_installConfigResolver = new InstallConfigResolver();
+        }
+        return $this->_installConfigResolver;
+    }
+
+    /**
+     * 解析单个端点的落盘目录（绝对路径，不含插件名）
      *
-     * 部署到三端：
-     * - admin    → template/mono/apps/admin/src/plugin/{name}
-     * - platform → template/mono/apps/platform/src/plugin/{name}
-     * - web      → template/web/app/plugin/{name}
+     * 优先级：
+     *  1) 插件 info.php 显式配置 template.{endpoint}（向后兼容）
+     *  2) config/install.php 按运行模式解析（mono/separated）
+     *  3) 回退应用配置 getConfig('template.{endpoint}')
+     *
+     * @return string 失败返回空字符串
+     */
+    private function resolveTemplateTargetBase(string $endpoint): string
+    {
+        // 1) 插件 info.php 显式覆盖
+        $infoFile = $this->pluginPath . '/config/info.php';
+        if (is_file($infoFile)) {
+            $info = include $infoFile;
+            if (is_array($info) && isset($info['template'][$endpoint])
+                && is_string($info['template'][$endpoint]) && $info['template'][$endpoint] !== '') {
+                return $this->getProjectRoot() . '/' . trim($info['template'][$endpoint], '/');
+            }
+        }
+
+        // 2) 按运行模式从 config/install.php 解析（模板根 + plugin_dir）
+        $resolver = $this->installConfigResolver();
+        $path = $resolver->templatePath($endpoint, $resolver->resolveMode($this->getInstallMode()));
+        if ($path !== '') {
+            $pluginDir = $resolver->templateMeta($endpoint)['plugin_dir'] ?? 'src/plugin';
+            return rtrim($path . '/' . trim((string) $pluginDir, '/'), '/');
+        }
+
+        // 3) 回退应用配置
+        $targetBase = $this->getConfig("template.{$endpoint}");
+        return is_string($targetBase) && $targetBase !== ''
+            ? $this->getProjectRoot() . '/' . trim($targetBase, '/')
+            : '';
+    }
+
+    /**
+     * 复制模板资源到目标目录（路径按运行模式解析）
+     *
+     * - mono：      admin/platform → template/mono/apps/{x}/src/plugin/{name}
+     * - separated： admin/platform → template/{x}/src/plugin/{name}
+     * - web（通用）：template/web/src/plugin/{name}
      */
     protected function copyTemplates(): void
     {
@@ -37,9 +92,9 @@ trait TemplateTrait
 
         $this->output("📂 Copying templates from {$templateDir}...");
 
-        $this->copyTemplateDir('admin');
-        $this->copyTemplateDir('platform');
-        $this->copyTemplateDir('web');
+        foreach (self::TEMPLATE_ENDPOINTS as $endpoint) {
+            $this->copyTemplateDir($endpoint);
+        }
     }
 
     /**
@@ -48,15 +103,19 @@ trait TemplateTrait
     protected function copyTemplateDir(string $endpoint): void
     {
         $resourceDir = $this->getConfig('resource.template', 'template');
-        $targetBase = $this->getConfig("template.{$endpoint}");
-
         $sourceDir = $this->pluginPath . '/resource/' . $resourceDir . '/' . $endpoint;
-        $targetDir = $this->getProjectRoot() . '/' . $targetBase . '/' . $this->pluginName;
 
         if (!is_dir($sourceDir)) {
             $this->output("  ⚠️ {$endpoint}: Template source not found");
             return;
         }
+
+        $targetBase = $this->resolveTemplateTargetBase($endpoint);
+        if ($targetBase === '') {
+            $this->output("  ⚠️ {$endpoint}: Template target path not resolved");
+            return;
+        }
+        $targetDir = $targetBase . '/' . $this->pluginName;
 
         if (!is_dir(dirname($targetDir))) {
             mkdir(dirname($targetDir), 0755, true);
@@ -104,28 +163,57 @@ trait TemplateTrait
     {
         $this->output("🗑️ Deleting plugin templates...");
 
-        $this->deleteTemplateDir('admin');
-        $this->deleteTemplateDir('platform');
-        $this->deleteTemplateDir('web');
+        // 同时清理所有模式的落盘目录，避免切换模式后旧目录变成幽灵目录：
+        // 若只按当前模式删，切到另一模式安装会残留上一种模式的副本。
+        $resolver = $this->installConfigResolver();
+        $mode = $resolver->resolveMode($this->getInstallMode());
+        foreach (self::TEMPLATE_ENDPOINTS as $endpoint) {
+            $base = $this->resolveTemplateTargetBase($endpoint);
+            if ($base !== '') {
+                $this->deleteTemplatePath($base . '/' . $this->pluginName, $endpoint);
+            }
+        }
+
+        // 清理非当前模式的其它模式路径（仅当落盘目录确实存在时）
+        foreach ($resolver->modes() as $modeKey => $_) {
+            if ($modeKey === $mode) {
+                continue;
+            }
+            foreach (self::TEMPLATE_ENDPOINTS as $endpoint) {
+                $path = $resolver->templatePath($endpoint, $modeKey);
+                if ($path === '') {
+                    continue;
+                }
+                // 与安装落盘保持一致：必须拼接 plugin_dir，否则只删到模板根，src/plugin 下副本残留
+                $pluginDir = $resolver->templateMeta($endpoint)['plugin_dir'] ?? 'src/plugin';
+                $targetDir = rtrim($path . '/' . trim((string) $pluginDir, '/') . '/' . $this->pluginName, '/');
+                $this->deleteTemplatePath($targetDir, $endpoint . "@{$modeKey}");
+            }
+        }
     }
 
     /**
-     * 删除单个端模板
+     * 删除单个端的模板目录（按路径）
+     */
+    private function deleteTemplatePath(string $targetDir, string $label): void
+    {
+        if (!is_dir($targetDir)) {
+            return;
+        }
+        $this->recurseDelete($targetDir);
+        $this->output("  ✅ {$label}: Templates deleted");
+    }
+
+    /**
+     * 删除单个端模板（保留给子类/兼容调用，按当前模式解析）
      */
     protected function deleteTemplateDir(string $endpoint): void
     {
-        $targetBase = $this->getConfig("template.{$endpoint}");
-
-        $targetDir = $this->getProjectRoot() . '/' . $targetBase . '/' . $this->pluginName;
-
-        if (!is_dir($targetDir)) {
-            $this->output("  ⚠️ {$endpoint}: Template directory not found");
+        $targetBase = $this->resolveTemplateTargetBase($endpoint);
+        if ($targetBase === '') {
             return;
         }
-
-        $this->recurseDelete($targetDir);
-
-        $this->output("  ✅ {$endpoint}: Templates deleted");
+        $this->deleteTemplatePath($targetBase . '/' . $this->pluginName, $endpoint);
     }
 
     /**

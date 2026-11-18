@@ -43,13 +43,14 @@ final class PluginInstallService extends PluginBaseService
      * PluginInstallService 只负责流程控制，实际安装逻辑完全由插件 Install.php 处理
      *
      * @param string       $code
-     * @param string       $mode
+     * @param string       $mode       安装来源：local / market
      * @param string|int|null $tenantId 租户ID（null=平台安装）
+     * @param string|null  $templateMode 前端模板组织模式：mono / separated（null=取配置默认）
      *
      * @return \Generator
      * @throws \Exception
      */
-    public function install(string $code, string $mode = 'local', string|int|null $tenantId = null): \Generator
+    public function install(string $code, string $mode = 'local', string|int|null $tenantId = null, ?string $templateMode = null): \Generator
     {
         $sessionUuid = UUIDGenerator::generate();
         $request     = request();
@@ -144,7 +145,7 @@ final class PluginInstallService extends PluginBaseService
 
             // 5. 安装检查
             yield Sse::progress(PluginInstallEvent::INSTALL_CHECK->label(), 35, [], $sessionUuid);
-            $checkResult = $this->installCheck($code);
+            $checkResult = $this->installCheck($code, $templateMode);
             if ($checkResult['overall_status'] !== 'success') {
                 yield Sse::error($checkResult['message'], [], $sessionUuid);
                 return;
@@ -183,6 +184,8 @@ final class PluginInstallService extends PluginBaseService
             // 设置安装上下文
             $context = $tenantId === null ? 'platform' : 'tenant';
             $installInstance->setContext($context);
+            // 传递前端模板组织模式，供 TemplateTrait 按模式解析落盘目录
+            $installInstance->setInstallMode($templateMode);
             if ($tenantId !== null) {
                 $installInstance->setTenantId($tenantId);
                 // 按租户自身隔离模式解析连接：平台远程/CLI 场景没有请求租户上下文，
@@ -311,11 +314,12 @@ final class PluginInstallService extends PluginBaseService
     /**
      * 安装检查
      *
-     * @param string $name 插件名称
+     * @param string      $name         插件名称
+     * @param string|null $templateMode 前端模板组织模式（mono/separated），null=配置默认
      *
      * @return array 检查结果
      */
-    public function installCheck(string $name): array
+    public function installCheck(string $name, ?string $templateMode = null): array
     {
         // 初始化返回结果
         $result = [
@@ -329,21 +333,21 @@ final class PluginInstallService extends PluginBaseService
         $checks = [];
 
         try {
-            // 1. 核心目录存在性检查（模板目录统一在 template 下）
-            $coreDirectories = [
-                'admin' => [
-                    'path' => \core\business\plugin\PluginPath::templateProjectPath('mono/apps/admin') . DIRECTORY_SEPARATOR,
-                    'name' => 'Admin目录',
-                ],
-                'platform' => [
-                    'path' => \core\business\plugin\PluginPath::templateProjectPath('mono/apps/platform') . DIRECTORY_SEPARATOR,
-                    'name' => 'Platform目录',
-                ],
-                'web'   => [
-                    'path' => \core\business\plugin\PluginPath::templateProjectPath('web') . DIRECTORY_SEPARATOR,
-                    'name' => 'Web目录',
-                ],
-            ];
+            // 1. 核心目录存在性检查（路径按运行模式从 config/install.php 解析）
+            $resolver = new \core\business\install\InstallConfigResolver();
+            $resolvedMode = $resolver->resolveMode($templateMode);
+            $coreDirectories = [];
+            $endpointLabels = ['admin' => 'Admin目录', 'platform' => 'Platform目录', 'web' => 'Web目录'];
+            foreach ($resolver->resolveTemplates($resolvedMode) as $endpoint) {
+                $path = $resolver->templatePath($endpoint, $resolvedMode);
+                if ($path === '') {
+                    continue;
+                }
+                $coreDirectories[$endpoint] = [
+                    'path' => $path . DIRECTORY_SEPARATOR,
+                    'name' => $endpointLabels[$endpoint] ?? ucfirst($endpoint) . '目录',
+                ];
+            }
 
             foreach ($coreDirectories as $dirKey => $dirInfo) {
                 if (is_dir($dirInfo['path'])) {
@@ -370,12 +374,8 @@ final class PluginInstallService extends PluginBaseService
                 }
             }
 
-            // 2. 插件安装目录权限检查（与 plugin.php 配置 template 路径一致）
-            $adminPluginDirectory = \core\business\plugin\PluginPath::templateProjectPath('mono/apps/admin') . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'plugin' . DIRECTORY_SEPARATOR;
-            $platformPluginDirectory = \core\business\plugin\PluginPath::templateProjectPath('mono/apps/platform') . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'plugin' . DIRECTORY_SEPARATOR;
-            $webPluginDirectory   = \core\business\plugin\PluginPath::templateProjectPath('web') . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'plugin' . DIRECTORY_SEPARATOR;
-            $resourceDirectory    = public_path() . DIRECTORY_SEPARATOR;
-
+            // 2. 插件安装目录权限检查（路径按运行模式从 config/install.php 解析）
+            $resourceDirectory = public_path() . DIRECTORY_SEPARATOR;
             $permissionChecks = [
                 [
                     'name'            => '插件源码目录',
@@ -383,30 +383,27 @@ final class PluginInstallService extends PluginBaseService
                     'permission_type' => 'readable',
                     'description'     => '插件源码目录可读性检查',
                 ],
-                [
-                    'name'            => 'Admin插件目录',
-                    'path'            => $adminPluginDirectory,
+            ];
+            $endpointPermLabels = ['admin' => 'Admin', 'platform' => 'Platform', 'web' => 'Web'];
+            foreach ($resolver->resolveTemplates($resolvedMode) as $endpoint) {
+                $pluginDir = $resolver->templatePath($endpoint, $resolvedMode);
+                if ($pluginDir === '') {
+                    continue;
+                }
+                $pluginDir .= DIRECTORY_SEPARATOR . trim($resolver->templateMeta($endpoint)['plugin_dir'] ?? 'src/plugin', '/') . DIRECTORY_SEPARATOR;
+                $label = $endpointPermLabels[$endpoint] ?? ucfirst($endpoint);
+                $permissionChecks[] = [
+                    'name'            => "{$label}插件目录",
+                    'path'            => $pluginDir,
                     'permission_type' => 'writable',
-                    'description'     => '插件将安装到的Admin目录可写性检查',
-                ],
-                [
-                    'name'            => 'Platform插件目录',
-                    'path'            => $platformPluginDirectory,
-                    'permission_type' => 'writable',
-                    'description'     => '插件将安装到的Platform目录可写性检查',
-                ],
-                [
-                    'name'            => 'Web插件目录',
-                    'path'            => $webPluginDirectory,
-                    'permission_type' => 'writable',
-                    'description'     => '插件将安装到的Web目录可写性检查',
-                ],
-                [
-                    'name'            => '公共资源目录',
-                    'path'            => $resourceDirectory,
-                    'permission_type' => 'writable',
-                    'description'     => '插件资源将安装到的公共目录可写性检查',
-                ],
+                    'description'     => "插件将安装到的{$label}目录可写性检查",
+                ];
+            }
+            $permissionChecks[] = [
+                'name'            => '公共资源目录',
+                'path'            => $resourceDirectory,
+                'permission_type' => 'writable',
+                'description'     => '插件资源将安装到的公共目录可写性检查',
             ];
 
             foreach ($permissionChecks as $checkItem) {

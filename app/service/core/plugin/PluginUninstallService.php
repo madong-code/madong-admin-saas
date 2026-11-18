@@ -43,7 +43,7 @@ class PluginUninstallService extends PluginBaseService
      * @return \Generator CLI 模式返回数组，在线模式返回 Generator
      * @throws \Exception
      */
-    public function uninstall(string $code, string|int|null $tenantId = null): \Generator
+    public function uninstall(string $code, string|int|null $tenantId = null, ?string $templateMode = null): \Generator
     {
         $sessionUuid = UUIDGenerator::generate();
         $request     = request();
@@ -134,6 +134,8 @@ class PluginUninstallService extends PluginBaseService
             // 设置安装上下文
             $context = $tenantId === null ? 'platform' : 'tenant';
             $installInstance->setContext($context);
+            // 传递前端模板组织模式，供 TemplateTrait 按模式解析清理目录
+            $installInstance->setInstallMode($templateMode);
             if ($tenantId !== null) {
                 $installInstance->setTenantId($tenantId);
                 // 按租户自身隔离模式解析连接：平台远程/CLI 场景没有请求租户上下文，

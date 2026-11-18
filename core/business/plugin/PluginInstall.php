@@ -71,6 +71,12 @@ class PluginInstall
     /** @var string 安装上下文 'platform' | 'tenant' */
     protected string $context = 'platform';
 
+    /**
+     * 前端模板组织模式：mono / separated
+     * null 表示未显式指定，由 InstallConfigResolver 取 config/install.php 默认值
+     */
+    protected ?string $installMode = null;
+
     /** @var string|int|null 租户ID（tenant上下文时使用） */
     protected string|int|null $tenantId = null;
 
@@ -263,6 +269,24 @@ class PluginInstall
     {
         $this->context = $context;
         return $this;
+    }
+
+    /**
+     * 设置前端模板组织模式（mono / separated）
+     * 未设置时由 InstallConfigResolver 取配置默认值（separated）
+     */
+    public function setInstallMode(?string $mode): self
+    {
+        $this->installMode = $mode;
+        return $this;
+    }
+
+    /**
+     * 获取当前前端模板组织模式（未显式设置返回 null）
+     */
+    public function getInstallMode(): ?string
+    {
+        return $this->installMode;
     }
 
     /**
