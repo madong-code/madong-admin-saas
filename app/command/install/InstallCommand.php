@@ -34,6 +34,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  * php webman install:madong -y --tenant-mode=manual --admin-username=root --admin-password=123456
  * php webman install:madong -y --tenant-mode=none --admin-username=admin --admin-password=123456
  * php webman install:madong --db-host=localhost --db-port=3306 --db-name=madong --db-user=root --db-pass=123456
+ * php webman install:madong -y --build-project=1 --mode=separated --templates=admin,platform,web
+ * php webman install:madong -y --build-project=1 --mode=mono
  *
  * 交互顺序与 Web 向导一致：环境检测 → 数据库 → 是否启用多租户 → 超级管理员账户 → 安装选项。
  * 多租户默认使用系统保留账号 root（平台超级管理员），单租户默认 admin。
@@ -104,6 +106,8 @@ class InstallCommand extends BaseCommand
             // 安装选项
             ->addOption('install-database', null, InputOption::VALUE_OPTIONAL, '是否安装数据库表（1=是，0=否）', '1')
             ->addOption('build-project', null, InputOption::VALUE_OPTIONAL, '是否构建前端项目（1=是，0=否；默认不构建，失败不影响安装）')
+            ->addOption('mode', null, InputOption::VALUE_OPTIONAL, '前端模板组织模式：mono=单仓双端，separated=分离双端；默认取 config/install.php 的 default_mode')
+            ->addOption('templates', null, InputOption::VALUE_OPTIONAL, '前端模板清单（逗号分隔，如 admin,platform,web）；默认取模式配置')
             ->addOption('non-interactive', 'y', InputOption::VALUE_NONE, '非交互模式（使用所有默认值）')
             ->addOption('skip-env-check', null, InputOption::VALUE_NONE, '跳过环境检查');
     }
@@ -396,6 +400,16 @@ class InstallCommand extends BaseCommand
         }
         $params['build_project'] = $buildProject === '1' ? '1' : '0';
 
+        // 前端模板组织模式与清单：显式指定时透传给服务，未指定则由 config/install.php 决定
+        $mode = $input->getOption('mode');
+        if ($mode !== null && $mode !== '') {
+            $params['template_mode'] = $mode;
+        }
+        $templates = $input->getOption('templates');
+        if ($templates !== null && $templates !== '') {
+            $params['templates'] = $templates;
+        }
+
         return $params;
     }
 
@@ -421,6 +435,8 @@ class InstallCommand extends BaseCommand
             ['管理员邮箱' => $params['admin_email']],
             ['安装数据库' => $params['install_database'] == '1' ? '是' : '否'],
             ['构建前端' => $params['build_project'] == '1' ? '是' : '否'],
+            ['前端模板模式' => !empty($params['template_mode']) ? $params['template_mode'] : '配置默认（separated）'],
+            ['前端模板清单' => !empty($params['templates']) ? $params['templates'] : '按模式配置'],
         );
         $io->newLine();
 

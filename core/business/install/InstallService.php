@@ -42,6 +42,7 @@ final class InstallService
     use AdminTrait;
     protected string $lock_file;
     protected ?Terminal $terminalService = null;
+    protected ?InstallConfigResolver $installConfigResolver = null;
 
     public function __construct()
     {
@@ -71,6 +72,17 @@ final class InstallService
             $this->terminalService = Terminal::create();
         }
         return $this->terminalService;
+    }
+
+    /**
+     * 获取安装配置解析器（延迟加载）
+     */
+    protected function installConfigResolver(): InstallConfigResolver
+    {
+        if ($this->installConfigResolver === null) {
+            $this->installConfigResolver = new InstallConfigResolver();
+        }
+        return $this->installConfigResolver;
     }
 
     /**
@@ -245,28 +257,28 @@ final class InstallService
         $sessionUuid = uniqid('install_', true);
         yield Sse::progress('> 执行安装', 1, [], $sessionUuid);
         try {
-            // 1. 验证安装状态 (1-10%)
-            yield Sse::progress('> 1/6 验证安装状态', 5, [], $sessionUuid);
+            // 解析前端模板模式（mono/separated），清单与路径解析共用同一模式
+            $installMode = $this->installConfigResolver()->resolveMode($params['template_mode'] ?? null);
+
+            // 阶段一：环境准备 (1-25%)
+            yield Sse::progress('> [1/4 环境准备] 验证安装状态', 5, [], $sessionUuid);
             if ($this->checkInstalled()) {
                 throw new Exception('系统已安装，请勿重复安装');
             }
             
-            // 2. 环境检测 (10-15%)
-            yield Sse::progress('> 2/6 环境检测...', 12, [], $sessionUuid);
+            yield Sse::progress('> [1/4 环境准备] 环境检测...', 12, [], $sessionUuid);
             if (!$this->checkEnvironment()['all_requirements_met']) {
                 throw new Exception('系统环境不满足安装要求');
             }
-            
-            // 3. 数据库配置验证 (15-20%)
-            yield Sse::progress('> 3/6 数据库配置验证', 17, [], $sessionUuid);
+
+            yield Sse::progress('> [1/4 环境准备] 数据库配置验证', 17, [], $sessionUuid);
             $dbParams = $this->extractPrefixedData($params, 'db_');
             $errors   = $this->validateDatabaseConfig($dbParams);
             if (!empty($errors)) {
                 throw new Exception('安装参数验证失败: ' . implode(', ', $errors));
             }
-            
-            // 4. 参数配置验证 (20-25%)
-            yield Sse::progress('> 4/6 参数配置验证', 22, [], $sessionUuid);
+
+            yield Sse::progress('> [1/4 环境准备] 参数配置验证', 22, [], $sessionUuid);
             $adminParams = $this->extractPrefixedData($params, 'admin_');
             $errors      = $this->validateAdminConfig($adminParams);
             if (!empty($errors)) {
@@ -280,25 +292,30 @@ final class InstallService
             $redisParams = $this->extractPrefixedData($params, 'redis_');
 
             // 测试数据库连接 (25-30%)
-            yield Sse::progress('> 测试数据库连接', 28, [], $sessionUuid);
+            yield Sse::progress('> [1/4 环境准备] 测试数据库连接', 28, [], $sessionUuid);
             $this->testDatabaseConnection($dbParams);
 
-            // 5. 执行安装 (30-60%)
+            // 阶段二：依赖安装 (30-80%)
             if ($params['install_database'] == 1) {
-                yield Sse::progress('> 5/6 执行数据库安装', 30, [], $sessionUuid);
+                yield Sse::progress('> [2/4 依赖安装] 执行数据库安装', 30, [], $sessionUuid);
                 yield from $this->installDatabaseTables($dbParams, $adminParams, $sessionUuid, $enableTenant);
             }
 
             if ($params['install_database'] == 0) {
-                yield Sse::progress('> 5/6 创建系统管理员', 30, [], $sessionUuid);
+                yield Sse::progress('> [2/4 依赖安装] 创建系统管理员', 30, [], $sessionUuid);
                 yield from $this->initializeAdmin($dbParams, $adminParams, $sessionUuid, $enableTenant);
             }
 
             // 前端构建 (60-80%)：可选步骤，失败不影响数据库/配置/锁的安装结果
             if ($params['build_project'] == 1) {
-                yield Sse::progress('> 检查前端项目', 60, [], $sessionUuid);
+                yield Sse::progress('> [2/4 依赖安装] 检查前端项目', 60, [], $sessionUuid);
                 try {
-                    yield from $this->processFrontendProjects($sessionUuid, $enableTenant);
+                    yield from $this->processFrontendProjects(
+                        $sessionUuid,
+                        $enableTenant,
+                        $installMode,
+                        $params['templates'] ?? null
+                    );
                 } catch (Throwable $e) {
                     yield Sse::warning(
                         '前端构建/依赖安装失败，安装继续；可稍后在后台「终端 → 重新发布」中单独构建: ' . $e->getMessage(),
@@ -308,12 +325,12 @@ final class InstallService
                 }
             }
 
-            // 6. 创建 .env 文件 (80-95%)
-            yield Sse::progress('> 6/6 创建.env配置文件', 85, [], $sessionUuid);
+            // 阶段三：配置初始化 (80-95%)
+            yield Sse::progress('> [3/4 配置初始化] 创建.env配置文件', 85, [], $sessionUuid);
             $this->copyDatabaseTemplateAndCreateEnv($dbParams, $enableTenant, $redisParams);
 
-            // 创建安装锁 (95-99%)：必须在 .env 之后，避免留下「已上锁但无密钥」的不可用状态
-            yield Sse::progress('> 创建安装锁', 95, [], $sessionUuid);
+            // 阶段四：安装验证 (95-99%)：必须在 .env 之后，避免留下「已上锁但无密钥」的不可用状态
+            yield Sse::progress('> [4/4 安装验证] 创建安装锁', 95, [], $sessionUuid);
             $this->createInstallLock();
 
             // 完成安装 (100%)
@@ -341,19 +358,18 @@ final class InstallService
      *
      * @return bool
      */
-    private function checkFrontendProjectExists(string $projectType): bool
+    private function checkFrontendProjectExists(string $projectType, ?string $mode = null): bool
     {
-        $baseDir      = dirname(base_path());
-        $projectPaths = [
-            'admin'    => $baseDir . '/template/mono/apps/admin',
-            'platform' => $baseDir . '/template/mono/apps/platform',
-            'web'      => $baseDir . '/template/web',
-            'uni-app'  => $baseDir . '/template/uni-app',
-        ];
-        $projectDir  = $projectPaths[$projectType] ?? $baseDir . '/template/' . $projectType;
-        $packageJson = $projectDir . '/package.json';
+        $resolver     = $this->installConfigResolver();
+        $resolvedMode = $resolver->resolveMode($mode);
+        $projectDir   = $resolver->templatePath($projectType, $resolvedMode);
 
-        return is_dir($projectDir) && file_exists($packageJson);
+        if ($projectDir === '') {
+            // 配置外项目（如 uni-app）回退到 template/{type}
+            $projectDir = rtrim(dirname(base_path()) . '/template/' . trim($projectType, '/'), '/');
+        }
+
+        return is_dir($projectDir) && file_exists(rtrim($projectDir, '/') . '/package.json');
     }
 
     /**
@@ -363,7 +379,7 @@ final class InstallService
      *
      * @return bool
      */
-    private function checkBuildDirectoryExists(string $projectType): bool
+    private function checkBuildDirectoryExists(string $projectType, ?string $sourceDirOverride = null): bool
     {
         $config = config("terminal.frontend_programs.{$projectType}");
         if (!$config || !$config['enabled']) {
@@ -373,8 +389,8 @@ final class InstallService
         // 处理不同项目的构建目录路径
         $sourceDir = $config['source_dir'] ?? '';
 
-        // 替换路径变量
-        $sourceDir = $this->replacePathVariables($sourceDir);
+        // 替换路径变量；模式解析出的目录优先
+        $sourceDir = $sourceDirOverride ?? $this->replacePathVariables($sourceDir);
 
         // 标准化路径分隔符（Windows兼容）
         $sourceDir = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $sourceDir);
@@ -404,16 +420,20 @@ final class InstallService
      *
      * @return bool
      */
-    private function waitForBuildCompletion(string $projectType, int $maxRetries = 5, int $retryInterval = 2000000): bool
-    {
+    private function waitForBuildCompletion(
+        string $projectType,
+        int $maxRetries = 5,
+        int $retryInterval = 2000000,
+        ?string $sourceDirOverride = null
+    ): bool {
         $config = config("terminal.frontend_programs.{$projectType}");
         if (!$config || !$config['enabled']) {
             return false;
         }
 
         $sourceDir = $config['source_dir'] ?? '';
-        // 替换路径变量
-        $sourceDir = $this->replacePathVariables($sourceDir);
+        // 替换路径变量；模式解析出的目录优先
+        $sourceDir = $sourceDirOverride ?? $this->replacePathVariables($sourceDir);
         $sourceDir = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $sourceDir);
 
         // 等待构建目录创建
@@ -443,18 +463,18 @@ final class InstallService
      * @return \Generator
      * @throws \Exception
      */
-    private function checkAndWaitForBuildResult(string $projectType, string $sessionUuid): \Generator
+    private function checkAndWaitForBuildResult(string $projectType, string $sessionUuid, ?string $sourceDirOverride = null): \Generator
     {
         yield Sse::progress("检查{$projectType}构建结果...", 58, [], $sessionUuid);
 
         // 等待构建完成
-        if (!$this->waitForBuildCompletion($projectType)) {
+        if (!$this->waitForBuildCompletion($projectType, 5, 2000000, $sourceDirOverride)) {
             yield Sse::progress("{$projectType} 构建超时或失败", 59, [], $sessionUuid);
             return false;
         }
 
         // 最终检查构建目录
-        if ($this->checkBuildDirectoryExists($projectType)) {
+        if ($this->checkBuildDirectoryExists($projectType, $sourceDirOverride)) {
             yield Sse::progress("{$projectType} 构建成功", 59, [], $sessionUuid);
             return true;
         } else {
@@ -471,15 +491,36 @@ final class InstallService
      * @return \Generator
      * @throws \Exception|\Throwable
      */
-    private function processFrontendProjects(string $sessionUuid, bool $enableTenant = false): \Generator
-    {
-        $frontendProjects  = $enableTenant ? ['admin', 'platform', 'web'] : ['admin', 'web'];
-        $availableProjects = [];
+    private function processFrontendProjects(
+        string $sessionUuid,
+        bool $enableTenant = false,
+        ?string $mode = null,
+        mixed $templateOverride = null
+    ): \Generator {
+        $resolver = $this->installConfigResolver();
+        $mode     = $resolver->resolveMode($mode);
 
-        // 检查可用的前端项目
-        foreach ($frontendProjects as $project) {
-            if ($this->checkFrontendProjectExists($project)) {
+        // 清单来自配置：--templates / params 显式覆盖优先，否则取模式下的模板 + 通用模板
+        $override = $this->normalizeTemplateOverride($templateOverride);
+        $projects = $resolver->resolveTemplates($mode, $override);
+
+        // 单租户不安装 platform（保持既有行为）；显式 --templates 时尊重用户选择
+        if (!$enableTenant && $override === null) {
+            $projects = array_values(array_filter(
+                $projects,
+                static fn ($t) => $t !== 'platform'
+            ));
+        }
+
+        $availableProjects = [];
+        $projectPaths      = [];
+        foreach ($projects as $project) {
+            $project = (string) $project;
+            if ($this->checkFrontendProjectExists($project, $mode)) {
                 $availableProjects[] = $project;
+                // 解析失败时置 null，下游回退 terminal 默认路径，避免空 cwd
+                $path                   = $resolver->templatePath($project, $mode);
+                $projectPaths[$project] = $path !== '' ? $path : null;
                 yield Sse::progress("检测到 {$project} 前端项目", 36, [], $sessionUuid);
             } else {
                 yield Sse::progress("跳过 {$project} 前端项目（目录不存在）", 36, [], $sessionUuid);
@@ -494,20 +535,21 @@ final class InstallService
         // 安装依赖 (60-65%)
         yield Sse::progress('安装前端依赖...', 62, [], $sessionUuid);
         foreach ($availableProjects as $project) {
-            yield from $this->installFrontendDependencies($project, $sessionUuid);
+            yield from $this->installFrontendDependencies($project, $sessionUuid, $projectPaths[$project] ?? null);
         }
 
         // 构建前端 (65-70%)
         yield Sse::progress('构建前端项目...', 67, [], $sessionUuid);
         foreach ($availableProjects as $project) {
-            yield from $this->buildFrontend($project, $sessionUuid);
+            yield from $this->buildFrontend($project, $sessionUuid, $projectPaths[$project] ?? null);
         }
 
         // 检查构建结果 (70-75%)
         yield Sse::progress('检查构建结果...', 72, [], $sessionUuid);
         $builtProjects = [];
         foreach ($availableProjects as $project) {
-            if (yield from $this->checkAndWaitForBuildResult($project, $sessionUuid)) {
+            $sourceDir = $this->frontendBuildSourceDir($project, $projectPaths[$project] ?? null, $resolver);
+            if (yield from $this->checkAndWaitForBuildResult($project, $sessionUuid, $sourceDir)) {
                 $builtProjects[] = $project;
             }
         }
@@ -519,7 +561,45 @@ final class InstallService
 
         // 迁移构建文件 (75-80%)
         yield Sse::progress('迁移前端构建文件...', 77, [], $sessionUuid);
-        yield from $this->migrateFrontendBuildFiles($sessionUuid, $builtProjects);
+        yield from $this->migrateFrontendBuildFiles($sessionUuid, $builtProjects, $projectPaths);
+    }
+
+    /**
+     * 归一化 --templates 覆盖值：支持逗号分隔字符串或数组
+     *
+     * @return string[]|null
+     */
+    private function normalizeTemplateOverride(mixed $override): ?array
+    {
+        if (is_array($override)) {
+            $values = $override;
+        } elseif (is_string($override) && trim($override) !== '') {
+            $values = explode(',', $override);
+        } else {
+            return null;
+        }
+
+        $values = array_values(array_unique(array_filter(
+            array_map(static fn ($v) => trim((string) $v), $values),
+            static fn ($v) => $v !== ''
+        )));
+
+        return $values === [] ? null : $values;
+    }
+
+    /**
+     * 解析模板的构建产物目录（按模式解析出的模板根 + 元数据 build_dir）
+     */
+    private function frontendBuildSourceDir(string $project, ?string $templatePath, InstallConfigResolver $resolver): ?string
+    {
+        if (!$templatePath) {
+            return null;
+        }
+        $buildDir = $resolver->templateMeta($project)['build_dir'] ?? null;
+        if (!is_string($buildDir) || $buildDir === '') {
+            $buildDir = $project === 'web' ? '.output/public' : 'dist';
+        }
+        return rtrim($templatePath, '/') . '/' . trim($buildDir, '/');
     }
 
     /**
@@ -531,7 +611,7 @@ final class InstallService
      * @return \Generator
      * @throws \Throwable
      */
-    private function installFrontendDependencies(string $projectType, string $sessionUuid): \Generator
+    private function installFrontendDependencies(string $projectType, string $sessionUuid, ?string $cwdOverride = null): \Generator
     {
         try {
             // 获取配置的包管理器
@@ -540,7 +620,13 @@ final class InstallService
 
             // 使用异步执行方法提供实时输出
             $progressStep = $projectType === 'admin' ? 42 : 44;
-            yield from $this->executeCommandWithRealTimeOutput($command, "{$projectType}前端依赖安装", $sessionUuid, $progressStep);
+            yield from $this->executeCommandWithRealTimeOutput(
+                $command,
+                "{$projectType}前端依赖安装",
+                $sessionUuid,
+                $progressStep,
+                $cwdOverride
+            );
 
         } catch (Exception $e) {
             throw new Exception("{$projectType}前端依赖安装失败: " . $e->getMessage());
@@ -556,7 +642,7 @@ final class InstallService
      * @return \Generator
      * @throws \Throwable
      */
-    private function buildFrontend(string $projectType, string $sessionUuid): \Generator
+    private function buildFrontend(string $projectType, string $sessionUuid, ?string $cwdOverride = null): \Generator
     {
         try {
             // 获取配置的包管理器
@@ -565,7 +651,13 @@ final class InstallService
 
             // 使用异步执行方法提供实时输出
             $progressStep = $projectType === 'admin' ? 52 : 54;
-            yield from $this->executeCommandWithRealTimeOutput($command, "{$projectType}前端构建", $sessionUuid, $progressStep);
+            yield from $this->executeCommandWithRealTimeOutput(
+                $command,
+                "{$projectType}前端构建",
+                $sessionUuid,
+                $progressStep,
+                $cwdOverride
+            );
 
         } catch (Exception $e) {
             throw new Exception("{$projectType}前端构建失败: " . $e->getMessage());
@@ -581,13 +673,15 @@ final class InstallService
      * @return \Generator
      * @throws \Exception
      */
-    private function migrateFrontendBuildFiles(string $sessionUuid, array $availableProjects): \Generator
+    private function migrateFrontendBuildFiles(string $sessionUuid, array $availableProjects, array $projectPaths = []): \Generator
     {
         try {
             $progressStep = 61;
+            $resolver     = $this->installConfigResolver();
             foreach ($availableProjects as $project) {
                 yield Sse::progress("迁移{$project}前端构建文件...", $progressStep, [], $sessionUuid);
-                $this->migrateFrontendProgram($project);
+                $sourceDir = $this->frontendBuildSourceDir($project, $projectPaths[$project] ?? null, $resolver);
+                $this->migrateFrontendProgram($project, $sourceDir);
                 $progressStep++;
             }
 
@@ -603,7 +697,7 @@ final class InstallService
      * @param string $frontendType 前端类型（admin/web/uni-app）
      * @return bool
      */
-    private function migrateFrontendProgram(string $frontendType): bool
+    private function migrateFrontendProgram(string $frontendType, ?string $sourceDirOverride = null): bool
     {
         $config = config('terminal.frontend_programs', []);
         
@@ -621,8 +715,8 @@ final class InstallService
         $preserveFiles = $programConfig['preserve_files'] ?? [];
         $copyOptions = $programConfig['copy_options'] ?? [];
 
-        // 替换路径变量
-        $sourceDir = $this->replacePathVariables($sourceDir);
+        // 替换路径变量；模式解析出的 source_dir 优先，避免回落到 mono 默认路径
+        $sourceDir = $sourceDirOverride ?? $this->replacePathVariables($sourceDir);
         $targetDir = $this->replacePathVariables($targetDir);
 
         if (empty($sourceDir) || empty($targetDir)) {
@@ -853,7 +947,7 @@ final class InstallService
      * @return \Generator
      * @throws \Throwable
      */
-    private function executeCommandWithRealTimeOutput(string $commandKey, string $description, string $sessionUuid, int $progressStep): \Generator
+    private function executeCommandWithRealTimeOutput(string $commandKey, string $description, string $sessionUuid, int $progressStep, ?string $cwdOverride = null): \Generator
     {
         // 检查命令是否存在
         $command = \core\business\terminal\Terminal::getCommand($commandKey);
@@ -877,8 +971,8 @@ final class InstallService
         // 替换命令变量
         $terminal     = Terminal::create();
         $finalCommand = $terminal->replaceCommandVariables($command['command'], $command['variables'] ?? []);
-        // 替换 cwd 中的变量
-        $finalCwd = $terminal->replaceCommandVariables($command['cwd'], $command['variables'] ?? []);
+        // 替换 cwd 中的变量；模式解析出的模板目录优先（避免回落到 mono 默认路径）
+        $finalCwd = $cwdOverride ?? $terminal->replaceCommandVariables($command['cwd'], $command['variables'] ?? []);
         yield Sse::progress('> ' . $finalCommand, $progressStep - 1, [], $sessionUuid);
 
         // 执行命令
