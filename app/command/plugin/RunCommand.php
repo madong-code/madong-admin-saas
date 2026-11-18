@@ -52,7 +52,8 @@ class RunCommand extends BaseCommand
             ->addArgument('version', InputArgument::OPTIONAL, 'Version (for update)')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force run migrations (ignore previous records)')
             ->addOption('data', 'd', InputOption::VALUE_NONE, 'Export with data (for export action)')
-            ->addOption('output', 'o', InputOption::VALUE_OPTIONAL, 'Output file path (for export action)');
+            ->addOption('output', 'o', InputOption::VALUE_OPTIONAL, 'Output file path (for export action)')
+            ->addOption('template-mode', null, InputOption::VALUE_OPTIONAL, 'Frontend template layout mode (mono/separated). Default from config/install.php');
     }
 
     public function __invoke(InputInterface $input, OutputInterface $output): int
@@ -63,6 +64,7 @@ class RunCommand extends BaseCommand
         $action = $input->getArgument('action');
         $version = $input->getArgument('version') ?? '1.0.0';
         $force = $input->getOption('force');
+        $templateMode = $input->getOption('template-mode');
 
         $io->title("Plugin Runner: {$name}");
         $io->info("Action: {$action}" . ($force ? " (force)" : ""));
@@ -118,6 +120,9 @@ class RunCommand extends BaseCommand
                         return Command::FAILURE;
                     } else {
                         $io->info('>>> Calling install() method...');
+                        if (method_exists($instance, 'setInstallMode')) {
+                            $instance->setInstallMode($templateMode);
+                        }
                         $result = $instance->install($version);
                         $io->info('<<< install() completed');
                     }
@@ -128,7 +133,7 @@ class RunCommand extends BaseCommand
                     // 使用统一的卸载服务（会检查 undeletable 配置）
                     $io->info('>>> Calling uninstall via PluginUninstallService...');
                     $uninstallService = Container::get(PluginUninstallService::class);
-                    return $this->executeStream($uninstallService->uninstall($name), $io, $name);
+                    return $this->executeStream($uninstallService->uninstall($name, null, $templateMode), $io, $name);
 
                 case 'delete':
                     // 使用统一的删除服务（会检查卸载状态）

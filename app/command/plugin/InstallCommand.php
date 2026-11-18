@@ -19,6 +19,7 @@ use app\service\core\plugin\PluginInstallService;
 use support\Container;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
@@ -46,7 +47,14 @@ class InstallCommand extends BaseCommand
     protected function configure(): void
     {
         $this->addArgument('name', InputArgument::REQUIRED, 'Plugin name')
-            ->addArgument('mode', InputArgument::OPTIONAL, 'Install mode (local/market)', 'local');
+            ->addArgument('mode', InputArgument::OPTIONAL, 'Install source (local/market)', 'local')
+            ->addOption(
+                'template-mode',
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'Frontend template layout mode (mono/separated). Default from config/install.php',
+                null
+            );
     }
 
     /**
@@ -60,16 +68,18 @@ class InstallCommand extends BaseCommand
         // 获取参数
         $name = $input->getArgument('name');
         $mode = $input->getArgument('mode');
+        $templateMode = $input->getOption('template-mode');
 
         $io->info("Installing plugin: {$name}");
-        $io->info("Install mode: {$mode}");
+        $io->info("Install source: {$mode}");
+        $io->info('Template mode: ' . ($templateMode ?: 'default(config/install.php)'));
 
         try {
             // 通过容器获取安装服务实例
             $installService = Container::get(PluginInstallService::class);
 
             // 执行安装流程（使用基类的流式处理）
-            return $this->executeStream($installService->install($name, $mode), $io, $name);
+            return $this->executeStream($installService->install($name, $mode, null, $templateMode), $io, $name);
 
         } catch (\Exception $e) {
             return $this->outputError($io, sprintf("Installation failed: %s", $e->getMessage()), $e);

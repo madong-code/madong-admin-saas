@@ -168,6 +168,7 @@ final class PluginController extends Base
         parameters: [
             new OA\Parameter(name: 'key', description: '插件标识', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'source', description: '安装源(remote/local)', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'template_mode', description: '前端模板模式(mono/separated)，不传取 config/install.php 默认值', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
         ]
     )]
     #[Permission('plugin:market:install')]
@@ -175,6 +176,9 @@ final class PluginController extends Base
     {
         $key    = $request->route->param('key');
         $source = $request->input('source', 'remote');
+
+        $templateMode = $request->input('template_mode');
+        $templateMode = is_string($templateMode) && $templateMode !== '' ? $templateMode : null;
 
         $connection = $request->connection;
 
@@ -188,7 +192,7 @@ final class PluginController extends Base
             $connection->send(Sse::progress('开始安装插件「' . $key . '」', 0));
 
             $installService = Container::make(PluginInstallService::class);
-            $generator      = $installService->install($key, $source);
+            $generator      = $installService->install($key, $source, null, $templateMode);
             foreach ($generator as $chunk) {
                 $connection->send($chunk);
             }
@@ -203,12 +207,16 @@ final class PluginController extends Base
         tags: ['模块市场'],
         parameters: [
             new OA\Parameter(name: 'key', description: '插件标识', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'template_mode', description: '前端模板模式(mono/separated)，不传取 config/install.php 默认值', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
         ]
     )]
     #[Permission('plugin:market:uninstall')]
     public function uninstall(Request $request): void
     {
         $key = $request->route->param('key');
+
+        $templateMode = $request->input('template_mode');
+        $templateMode = is_string($templateMode) && $templateMode !== '' ? $templateMode : null;
 
         $connection = $request->connection;
 
@@ -218,7 +226,7 @@ final class PluginController extends Base
         try {
             set_time_limit(0);
             $uninstallService = Container::make(PluginUninstallService::class);
-            $generator        = $uninstallService->uninstall($key);
+            $generator        = $uninstallService->uninstall($key, null, $templateMode);
             foreach ($generator as $chunk) {
                 $connection->send($chunk);
             }

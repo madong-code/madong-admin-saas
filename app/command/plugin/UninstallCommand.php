@@ -20,6 +20,7 @@ use support\Container;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
@@ -45,7 +46,15 @@ class UninstallCommand extends BaseCommand
      */
     protected function configure(): void
     {
-        $this->addArgument('name', InputArgument::REQUIRED, 'Plugin name');
+        $this->addArgument('name', InputArgument::REQUIRED, 'Plugin name')
+            ->addOption(
+                'template-mode',
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'Frontend template layout mode (mono/separated). Default from config/install.php',
+                null
+            )
+            ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip confirmation prompt');
     }
 
     /**
@@ -58,11 +67,13 @@ class UninstallCommand extends BaseCommand
 
         // 获取参数
         $name = $input->getArgument('name');
+        $templateMode = $input->getOption('template-mode');
 
         $io->info("Uninstalling plugin: {$name}");
+        $io->info('Template mode: ' . ($templateMode ?: 'default(config/install.php)'));
 
-        // 确认卸载
-        if (!$this->confirm($io, "Are you sure you want to uninstall plugin {$name}? This action cannot be undone.")) {
+        // 确认卸载（--yes 跳过确认，便于脚本/CI 自动化）
+        if (!$input->getOption('yes') && !$this->confirm($io, "Are you sure you want to uninstall plugin {$name}? This action cannot be undone.")) {
             $io->note("Uninstallation cancelled");
             return Command::SUCCESS;
         }
@@ -72,7 +83,7 @@ class UninstallCommand extends BaseCommand
             $uninstallService = Container::get(PluginUninstallService::class);
 
             // 执行卸载流程（使用基类的流式处理）
-            return $this->executeStream($uninstallService->uninstall($name), $io, $name);
+            return $this->executeStream($uninstallService->uninstall($name, null, $templateMode), $io, $name);
 
         } catch (\Exception $e) {
             return $this->outputError($io, sprintf("Uninstallation failed: %s", $e->getMessage()), $e);
