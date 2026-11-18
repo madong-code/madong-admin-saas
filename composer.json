@@ -83,7 +83,9 @@
         "webman/limiter": "^2.2",
         "mcp/sdk": "0.8",
         "nyholm/psr7": "1.8",
-        "symfony/finder": "7.3"
+        "symfony/finder": "7.3",
+        "dompdf/dompdf": "3.0",
+        "yansongda/pay": "3.7"
     },
     "suggest": {
         "ext-event": "For better performance. "
@@ -126,7 +128,8 @@
         },
         "allow-plugins": {
             "php-http/discovery": true
-        }
+        },
+        "use-github-api": false
     },
     "require-dev": {
         "phpunit/phpunit": "10.0"
