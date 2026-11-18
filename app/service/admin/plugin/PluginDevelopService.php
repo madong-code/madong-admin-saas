@@ -43,7 +43,7 @@ class PluginDevelopService extends BaseService
 
         $this->pluginDir  = $basePath . '/plugin';
         $this->adminDir   = $projectPath . '/template/mono/apps/admin/src/plugin';
-        $this->webDir     = $projectPath . '/template/web/app/plugin';
+        $this->webDir     = $projectPath . '/template/web/src/plugin';
     }
 
     /**
@@ -213,7 +213,7 @@ class PluginDevelopService extends BaseService
         $hasFrontend = false;
         $projectPath = dirname(base_path());
         $adminAddonDir = $projectPath . '/template/mono/apps/admin/src/plugin/' . $pluginKey;
-        $webAddonDir = $projectPath . '/template/web/app/plugin/' . $pluginKey;
+        $webAddonDir = $projectPath . '/template/web/src/plugin/' . $pluginKey;
         if (is_dir($adminAddonDir) || is_dir($webAddonDir)) {
             $hasFrontend = true;
         }

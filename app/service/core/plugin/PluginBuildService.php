@@ -351,7 +351,7 @@ final class PluginBuildService extends PluginBaseService
      */
     public function packageWeb(): true
     {
-        $sourcePath = PluginPath::templateProjectPath('web') . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'plugin' . DIRECTORY_SEPARATOR . $this->plugin . DIRECTORY_SEPARATOR;
+        $sourcePath = PluginPath::templateProjectPath('web') . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'plugin' . DIRECTORY_SEPARATOR . $this->plugin . DIRECTORY_SEPARATOR;
         if (!is_dir($sourcePath)) {
             return true;
         }
