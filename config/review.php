@@ -28,7 +28,7 @@ return [
     // 自动审核配置
     'auto_review'            => [
         // 自动审核人ID（默认0表示系统）
-        'reviewer_id' => env('REVIEW_AUTO_REVIEWER_ID', 0),
+        'reviewer_id' => (int) env('REVIEW_AUTO_REVIEWER_ID', 0),
     ],
 
     // 审核类型配置（根据业务需求扩展）

@@ -15,8 +15,8 @@ return [
     'default' => [
         'host'     => env('REDIS_HOST', '127.0.0.1'),
         'password' => env('REDIS_PASSWORD', null),
-        'port'     => env('REDIS_PORT', 6379),
-        'database' => env('REDIS_DB', 0),
+        'port'     => (int) env('REDIS_PORT', 6379),
+        'database' => (int) env('REDIS_DB', 0),
         'pool'     => [ // 连接池配置
                         'max_connections'    => 10,     // 连接池最大连接数
                         'min_connections'    => 1,      // 连接池最小连接数

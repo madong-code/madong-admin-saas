@@ -28,8 +28,8 @@ return [
         'default'   => [
             'host'     => env('CACHE_CUSTOM_REDIS_HOST', '127.0.0.1'),
             'password' => env('CACHE_CUSTOM_REDIS_PASSWORD', null),
-            'port'     => env('CACHE_CUSTOM_REDIS_PORT', 6379),
-            'database' => env('CACHE_CUSTOM_REDIS_DB', 0),
+            'port'     => (int) env('CACHE_CUSTOM_REDIS_PORT', 6379),
+            'database' => (int) env('CACHE_CUSTOM_REDIS_DB', 0),
         ],
         'namespace' => '',
         'prefix'    => 'md_',
@@ -38,8 +38,8 @@ return [
             'redis' => [
                 'host'     => env('CACHE_CUSTOM_REDIS_HOST', '127.0.0.1'),
                 'password' => env('CACHE_CUSTOM_REDIS_PASSWORD', null),
-                'port'     => env('CACHE_CUSTOM_REDIS_PORT', 6379),
-                'database' => env('CACHE_CUSTOM_REDIS_DB', 0),
+                'port'     => (int) env('CACHE_CUSTOM_REDIS_PORT', 6379),
+                'database' => (int) env('CACHE_CUSTOM_REDIS_DB', 0),
             ],
         ],
     ],
