@@ -22,10 +22,8 @@ public/*
 !public/logo.png
 !public/upload/logo.png
 
-# 忽略 plugin目录下除了example,demo除外
+# 插件代码为安装产物，源码统一由插件包管理，不纳入本仓库追踪
 plugin/*
-!plugin/example/
-!plugin/demo/
 
 # 忽略 tests 目录下的临时产物，保留回归用例与脚手架
 tests/*
@@ -33,10 +31,12 @@ tests/*
 !tests/Bootstrap.php
 !tests/Support/
 !tests/Support/TestJwtToken.php
+!tests/Support/ConfigInjector.php
 !tests/saas/
 !tests/saas/SecurityExportPathTest.php
 !tests/saas/SecurityJwtSecretTest.php
 !tests/saas/SecurityPlatformAuthTest.php
+!tests/saas/InstallConfigResolverTest.php
 !tests/integration/
 !tests/integration/SecurityConfigTest.php
 !tests/integration/InstallCommandTenantTest.php
