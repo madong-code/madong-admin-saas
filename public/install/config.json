@@ -1,7 +1,7 @@
 {
   "apiBaseUrl": "/adminapi",
   "installInfo": {
-    "title": "Madong SaaS 安装向导",
+    "title": "Madong 安装向导",
     "version": "1.0.0",
     "description": "极速后台开发框架"
   },
@@ -9,7 +9,7 @@
     "logo": "/logo.png",
     "name": "madong 极速后台开发框架",
     "officialWebsite": "https://madong.tech",
-    "community": "https://madong.tech/ask",
+    "community": "https://madong.tech/forum",
     "documentation": "https://madong.tech/docs",
     "frontendUrl": "/",
     "backendUrl": "/admin",
