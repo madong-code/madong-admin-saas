@@ -16,6 +16,7 @@ declare(strict_types=1);
 namespace app\command\install;
 
 use app\command\BaseCommand;
+use core\business\install\InstallConfigResolver;
 use core\business\install\InstallService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -51,6 +52,8 @@ class InstallCommand extends BaseCommand
 
     private ?InstallService $installService = null;
 
+    private ?InstallConfigResolver $configResolver = null;
+
     public function __construct()
     {
         parent::__construct();
@@ -74,6 +77,14 @@ class InstallCommand extends BaseCommand
             }
         }
         return $this->installService;
+    }
+
+    /**
+     * 获取安装配置解析器（延迟加载）
+     */
+    private function getConfigResolver(): InstallConfigResolver
+    {
+        return $this->configResolver ??= new InstallConfigResolver();
     }
 
     /**
@@ -103,9 +114,9 @@ class InstallCommand extends BaseCommand
             ->addOption('tenant-mode', null, InputOption::VALUE_OPTIONAL, '租户模式：none=单租户，manual=启用多租户（安装后手动创建租户）；默认 manual')
             ->addOption('enable-tenant', null, InputOption::VALUE_OPTIONAL, '是否启用多租户（1=是，0=否），显式设置时覆盖 --tenant-mode')
             
-            // 安装选项
-            ->addOption('install-database', null, InputOption::VALUE_OPTIONAL, '是否安装数据库表（1=是，0=否）', '1')
-            ->addOption('build-project', null, InputOption::VALUE_OPTIONAL, '是否构建前端项目（1=是，0=否；默认不构建，失败不影响安装）')
+            // 安装选项（不设默认值，交互模式才会逐项询问；非交互模式使用代码内默认值）
+            ->addOption('install-database', null, InputOption::VALUE_OPTIONAL, '是否安装数据库表（1=是，0=否；非交互默认 1）')
+            ->addOption('build-project', null, InputOption::VALUE_OPTIONAL, '是否构建前端项目（1=是，0=否；非交互默认构建并迁移到 public）')
             ->addOption('mode', null, InputOption::VALUE_OPTIONAL, '前端模板组织模式：mono=单仓双端，separated=分离双端；默认取 config/install.php 的 default_mode')
             ->addOption('templates', null, InputOption::VALUE_OPTIONAL, '前端模板清单（逗号分隔，如 admin,platform,web）；默认取模式配置')
             ->addOption('non-interactive', 'y', InputOption::VALUE_NONE, '非交互模式（使用所有默认值）')
@@ -166,6 +177,7 @@ class InstallCommand extends BaseCommand
         // 4. 执行安装
         $io->section('4. 执行安装');
         $io->text('开始安装...');
+        $this->startProgressBar($output);
         
         try {
             // 调用安装服务（共享在线安装逻辑）
@@ -183,6 +195,8 @@ class InstallCommand extends BaseCommand
                 }
             }
 
+            $this->stopProgressBar();
+
             if ($completed) {
                 $io->note('CLI 安装不会自动重载 Webman 服务，请按部署方式重启后端后访问。');
                 $io->note('租户开关已写入 .env 的 APP_TENANT_ENABLED；重启后端后 /adminapi/install/check 的 saas_mode 才会更新。');
@@ -199,6 +213,7 @@ class InstallCommand extends BaseCommand
 
             return $completed ? Command::SUCCESS : Command::FAILURE;
         } catch (\Throwable $e) {
+            $this->stopProgressBar();
             $this->outputError($io, '安装失败: ' . $e->getMessage(), $e);
             return Command::FAILURE;
         }
@@ -395,16 +410,57 @@ class InstallCommand extends BaseCommand
         $buildProject = $input->getOption('build-project');
         if ($buildProject === null || $buildProject === '') {
             $buildProject = $isInteractive
-                ? ($this->confirm($io, '是否构建前端项目？（耗时较长，失败不影响安装）', false) ? '1' : '0')
-                : '0';
+                ? ($this->confirm($io, '是否构建前端项目？（耗时较长，默认构建并迁移到 public）', true) ? '1' : '0')
+                : '1';
         }
         $params['build_project'] = $buildProject === '1' ? '1' : '0';
 
-        // 前端模板组织模式与清单：显式指定时透传给服务，未指定则由 config/install.php 决定
+        // 4.1 安装模式：mono（大仓）/ separated（多仓），完全由 config/install.php 驱动
+        $modeOptions = $this->getConfigResolver()->installModeOptions();
+        $defaultMode = $this->getConfigResolver()->resolveMode(null);
+
         $mode = $input->getOption('mode');
         if ($mode !== null && $mode !== '') {
-            $params['template_mode'] = $mode;
+            $resolved = $this->getConfigResolver()->resolveMode($mode);
+            if ($resolved !== $mode) {
+                $io->warning("未知的安装模式 [{$mode}]，已回退为 {$resolved}");
+            }
+            $mode = $resolved;
+        } elseif ($isInteractive && $modeOptions !== []) {
+            $labels = [];
+            foreach ($modeOptions as $key => $option) {
+                $label       = (string) ($option['label'] ?? $key);
+                $description = trim((string) ($option['description'] ?? ''));
+                $labels[$key] = $description !== '' ? "{$label} - {$description}" : $label;
+            }
+
+            $picked = $io->choice('请选择前端模板安装模式', $labels, $defaultMode);
+            // choice 对关联数组通常返回键名；兼容返回显示文本的情况
+            $mode = isset($modeOptions[$picked]) ? (string) $picked : (string) (array_search($picked, $labels, true) ?: $defaultMode);
+            if (!isset($modeOptions[$mode])) {
+                $mode = $defaultMode;
+            }
+        } else {
+            $mode = $defaultMode;
         }
+        $params['template_mode'] = $mode;
+
+        // 安装计划预览：模板物理路径 + backend/public 输出目录
+        $plan = $this->getConfigResolver()->installModePlan($mode, $tenantEnabled);
+        $io->text('模板模式：' . $plan['label']);
+        if ($plan['description'] !== '') {
+            $io->text('  ' . $plan['description']);
+        }
+        $io->text('模板目录：');
+        foreach ($plan['template_paths'] as $template => $path) {
+            $io->text("  - {$template}: {$path}");
+        }
+        $io->text($params['build_project'] === '1' ? '构建输出目录：' : '构建输出目录（本次跳过构建）：');
+        foreach ($plan['output_dirs'] as $template => $dir) {
+            $io->text("  - {$template}: {$dir}");
+        }
+
+        // 显式模板清单只作为收窄条件，租户规则仍由安装服务校验
         $templates = $input->getOption('templates');
         if ($templates !== null && $templates !== '') {
             $params['templates'] = $templates;
@@ -418,6 +474,11 @@ class InstallCommand extends BaseCommand
      */
     private function confirmInstallation(SymfonyStyle $io, array $params, bool $isInteractive): bool
     {
+        $resolver      = $this->getConfigResolver();
+        $mode          = $resolver->resolveMode($params['template_mode'] ?? null);
+        $tenantEnabled = ($params['enable_tenant'] ?? '0') === '1';
+        $plan          = $resolver->installModePlan($mode, $tenantEnabled, $params['templates'] ?? null);
+
         // 显示配置摘要
         $io->text('安装配置摘要:');
         $io->definitionList(
@@ -426,17 +487,18 @@ class InstallCommand extends BaseCommand
             ['数据库名称' => $params['db_database']],
             ['数据库用户' => $params['db_username']],
             ['表前缀' => $params['db_prefix']],
-            ['租户模式' => ($params['enable_tenant'] ?? '0') === '1'
+            ['租户模式' => $tenantEnabled
                 ? '多租户（APP_TENANT_ENABLED=true，默认租户请在后台创建）'
                 : '单租户（APP_TENANT_ENABLED=false）'],
-            ['超级管理员' => $params['admin_username'] . (($params['enable_tenant'] ?? '0') === '1'
+            ['超级管理员' => $params['admin_username'] . ($tenantEnabled
                 ? '（平台超管 / 系统保留账号）'
                 : '（单租户）')],
             ['管理员邮箱' => $params['admin_email']],
             ['安装数据库' => $params['install_database'] == '1' ? '是' : '否'],
             ['构建前端' => $params['build_project'] == '1' ? '是' : '否'],
-            ['前端模板模式' => !empty($params['template_mode']) ? $params['template_mode'] : '配置默认（separated）'],
-            ['前端模板清单' => !empty($params['templates']) ? $params['templates'] : '按模式配置'],
+            ['前端模板模式' => $plan['label'] . "（{$plan['mode']}）"],
+            ['构建输出应用' => $params['build_project'] == '1' ? implode('、', $plan['templates']) : '跳过构建'],
+            ['模板目录' => implode('、', array_filter($plan['template_paths']))],
         );
         $io->newLine();
 

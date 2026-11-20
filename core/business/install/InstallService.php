@@ -44,6 +44,15 @@ final class InstallService
     protected ?Terminal $terminalService = null;
     protected ?InstallConfigResolver $installConfigResolver = null;
 
+    /** 安装前文件快照，用于异常回退 */
+    private ?array $installSnapshot = null;
+
+    /** 已备份的 public 输出目录：target => backup */
+    private array $outputBackups = [];
+
+    /** 本次安装新建的 public 输出目录 */
+    private array $createdOutputDirs = [];
+
     public function __construct()
     {
         $this->lock_file = base_path() . '/install.lock';
@@ -255,10 +264,35 @@ final class InstallService
     public function install(array $params): \Generator
     {
         $sessionUuid = uniqid('install_', true);
+
+        // 安装前快照：失败时回退 .env / config/database.php / install.lock / public 输出目录
+        $this->installSnapshot    = $this->createInstallSnapshot();
+        $this->outputBackups      = [];
+        $this->createdOutputDirs  = [];
+
         yield Sse::progress('> 执行安装', 1, [], $sessionUuid);
         try {
             // 解析前端模板模式（mono/separated），清单与路径解析共用同一模式
             $installMode = $this->installConfigResolver()->resolveMode($params['template_mode'] ?? null);
+            $enableTenant = !empty($params['enable_tenant']) && $params['enable_tenant'] == '1';
+
+            // 安装计划：模式说明、模板物理路径、构建输出目录
+            $buildProject = !empty($params['build_project']) && $params['build_project'] == '1';
+            $plan = $this->installConfigResolver()->installModePlan(
+                $installMode,
+                $enableTenant,
+                $this->normalizeTemplateOverride($params['templates'] ?? null)
+            );
+            yield Sse::progress(
+                sprintf(
+                    '> 安装模式：%s；构建应用：%s',
+                    $plan['label'],
+                    $buildProject ? implode('、', $plan['templates']) : '跳过构建'
+                ),
+                2,
+                ['phase' => 'plan'] + $plan,
+                $sessionUuid
+            );
 
             // 阶段一：环境准备 (1-25%)
             yield Sse::progress('> [1/4 环境准备] 验证安装状态', 5, [], $sessionUuid);
@@ -285,9 +319,6 @@ final class InstallService
                 throw new Exception('安装参数验证失败: ' . implode(', ', $errors));
             }
 
-            // 提取多租户开关
-            $enableTenant = !empty($params['enable_tenant']) && $params['enable_tenant'] == '1';
-
             // 提取 Redis 配置参数
             $redisParams = $this->extractPrefixedData($params, 'redis_');
 
@@ -296,18 +327,17 @@ final class InstallService
             $this->testDatabaseConnection($dbParams);
 
             // 阶段二：依赖安装 (30-80%)
-            if ($params['install_database'] == 1) {
+            $installDatabase = (int) ($params['install_database'] ?? 1);
+            if ($installDatabase === 1) {
                 yield Sse::progress('> [2/4 依赖安装] 执行数据库安装', 30, [], $sessionUuid);
                 yield from $this->installDatabaseTables($dbParams, $adminParams, $sessionUuid, $enableTenant);
-            }
-
-            if ($params['install_database'] == 0) {
+            } else {
                 yield Sse::progress('> [2/4 依赖安装] 创建系统管理员', 30, [], $sessionUuid);
                 yield from $this->initializeAdmin($dbParams, $adminParams, $sessionUuid, $enableTenant);
             }
 
             // 前端构建 (60-80%)：可选步骤，失败不影响数据库/配置/锁的安装结果
-            if ($params['build_project'] == 1) {
+            if ($buildProject) {
                 yield Sse::progress('> [2/4 依赖安装] 检查前端项目', 60, [], $sessionUuid);
                 try {
                     yield from $this->processFrontendProjects(
@@ -333,6 +363,9 @@ final class InstallService
             yield Sse::progress('> [4/4 安装验证] 创建安装锁', 95, [], $sessionUuid);
             $this->createInstallLock();
 
+            // 安装成功：清理输出目录备份
+            $this->commitInstallSnapshot();
+
             // 完成安装 (100%)
             yield Sse::completed('安装完成', [], $sessionUuid);
             // CLI 命令不在 Workerman 运行环境（Timer::add 会抛异常），仅 HTTP worker 中执行重载
@@ -345,9 +378,172 @@ final class InstallService
             }
             return;
         } catch (Throwable $e) {
-            yield Sse::runtimeError($e->getMessage(), [], $sessionUuid);
+            // 异常回退：恢复 .env / database.php / install.lock / public 输出目录
+            $rolledBack = $this->rollbackInstallSnapshot();
+            $friendly   = $this->friendlyInstallError($e);
+
+            yield Sse::runtimeError(
+                $friendly['message'],
+                [
+                    'hint'       => $friendly['hint'],
+                    'type'       => $friendly['type'],
+                    'rolled_back'=> $rolledBack,
+                    'mode'       => $installMode ?? null,
+                ],
+                $sessionUuid
+            );
             return;
         }
+    }
+
+    /**
+     * 安装前文件快照（用于异常回退）
+     */
+    private function createInstallSnapshot(): array
+    {
+        $envPath      = base_path('.env');
+        $dbConfigPath = base_path('config/database.php');
+
+        return [
+            'env_exists'        => is_file($envPath),
+            'env_content'       => is_file($envPath) ? (string) file_get_contents($envPath) : '',
+            'db_config_exists'  => is_file($dbConfigPath),
+            'db_config_content' => is_file($dbConfigPath) ? (string) file_get_contents($dbConfigPath) : '',
+            'lock_exists'       => is_file($this->lock_file),
+        ];
+    }
+
+    /**
+     * 安装成功：清理输出目录备份，保留安装结果
+     */
+    private function commitInstallSnapshot(): void
+    {
+        foreach ($this->outputBackups as $backupDir) {
+            if (is_dir($backupDir)) {
+                $this->deleteDirectory($backupDir);
+            }
+        }
+
+        $this->outputBackups     = [];
+        $this->createdOutputDirs = [];
+        $this->installSnapshot   = null;
+    }
+
+    /**
+     * 安装失败：按快照回退已产生的文件变更
+     *
+     * 回退范围：install.lock、.env、config/database.php、backend/public 下的构建输出目录。
+     * 数据库结构与数据变更无法自动回退，会在错误提示中明确告知。
+     */
+    private function rollbackInstallSnapshot(): bool
+    {
+        $rolledBack = false;
+
+        if (is_array($this->installSnapshot)) {
+            $snapshot = $this->installSnapshot;
+
+            if (empty($snapshot['lock_exists']) && is_file($this->lock_file)) {
+                $rolledBack = @unlink($this->lock_file) || $rolledBack;
+            }
+
+            $envPath = base_path('.env');
+            if (!empty($snapshot['env_exists'])) {
+                if (file_put_contents($envPath, (string) $snapshot['env_content']) !== false) {
+                    $rolledBack = true;
+                }
+            } elseif (is_file($envPath)) {
+                $rolledBack = @unlink($envPath) || $rolledBack;
+            }
+
+            $dbConfigPath = base_path('config/database.php');
+            if (!empty($snapshot['db_config_exists'])) {
+                if (file_put_contents($dbConfigPath, (string) $snapshot['db_config_content']) !== false) {
+                    $rolledBack = true;
+                }
+            } elseif (is_file($dbConfigPath)) {
+                $rolledBack = @unlink($dbConfigPath) || $rolledBack;
+            }
+        }
+
+        // 恢复安装前已存在的 public 输出目录
+        foreach (array_keys($this->outputBackups) as $targetDir) {
+            $this->rollbackOutputTarget($targetDir);
+            $rolledBack = true;
+        }
+
+        // 删除本次安装新建的输出目录
+        foreach ($this->createdOutputDirs as $targetDir) {
+            if (is_dir($targetDir)) {
+                $this->deleteDirectory($targetDir);
+                $rolledBack = true;
+            }
+        }
+
+        $this->outputBackups     = [];
+        $this->createdOutputDirs = [];
+        $this->installSnapshot   = null;
+
+        return $rolledBack;
+    }
+
+    /**
+     * 将安装异常转换为可操作的错误提示
+     *
+     * @return array{message:string,hint:string,type:string}
+     */
+    private function friendlyInstallError(Throwable $e): array
+    {
+        $message = $e->getMessage();
+        $lower   = strtolower($message);
+
+        if (str_contains($lower, '数据库') || str_contains($lower, 'pdo') || str_contains($lower, 'sql')) {
+            return [
+                'message' => $message,
+                'hint'    => '请确认数据库主机、端口、库名、账号密码正确，且数据库已创建；如已写入部分表，请先清理数据库后重试。',
+                'type'    => 'database',
+            ];
+        }
+
+        if (str_contains($lower, '权限') || str_contains($lower, 'permission') || str_contains($lower, 'writable')) {
+            return [
+                'message' => $message,
+                'hint'    => '请检查 backend 目录、.env 文件及 backend/public 的输出权限后重试。',
+                'type'    => 'permission',
+            ];
+        }
+
+        if (str_contains($lower, '前端') || str_contains($lower, 'node') || str_contains($lower, 'pnpm') || str_contains($lower, '构建')) {
+            return [
+                'message' => $message,
+                'hint'    => '请确认 Node.js、包管理器及模板依赖已安装；也可取消「构建前端」稍后在后台「终端 → 重新发布」中处理。',
+                'type'    => 'frontend',
+            ];
+        }
+
+        if (str_contains($lower, '.env') || str_contains($lower, '模板文件')) {
+            return [
+                'message' => $message,
+                'hint'    => '请确认 backend/.example.env、resource/data/template/database.php 等安装模板文件完整。',
+                'type'    => 'config',
+            ];
+        }
+
+        return [
+            'message' => $message,
+            'hint'    => '请查看 runtime 日志定位具体失败步骤；已产生的 .env、安装锁与 public 输出目录已回退，数据库结构与数据变更可能已写入，请按需清理数据库。',
+            'type'    => 'unknown',
+        ];
+    }
+
+    /**
+     * 转换为 backend 相对路径（用于日志与前端提示）
+     */
+    private function relativePath(string $path): string
+    {
+        $root = rtrim(str_replace('\\', '/', base_path()), '/');
+        $path = rtrim(str_replace('\\', '/', $path), '/');
+
+        return str_starts_with($path, $root . '/') ? substr($path, strlen($root) + 1) : $path;
     }
 
     /**
@@ -463,22 +659,22 @@ final class InstallService
      * @return \Generator
      * @throws \Exception
      */
-    private function checkAndWaitForBuildResult(string $projectType, string $sessionUuid, ?string $sourceDirOverride = null): \Generator
+    private function checkAndWaitForBuildResult(string $projectType, string $sessionUuid, ?string $sourceDirOverride = null, int $progressStep = 58): \Generator
     {
-        yield Sse::progress("检查{$projectType}构建结果...", 58, [], $sessionUuid);
+        yield Sse::progress("检查{$projectType}构建结果...", $progressStep, [], $sessionUuid);
 
         // 等待构建完成
         if (!$this->waitForBuildCompletion($projectType, 5, 2000000, $sourceDirOverride)) {
-            yield Sse::progress("{$projectType} 构建超时或失败", 59, [], $sessionUuid);
+            yield Sse::progress("{$projectType} 构建超时或失败", $progressStep, [], $sessionUuid);
             return false;
         }
 
         // 最终检查构建目录
         if ($this->checkBuildDirectoryExists($projectType, $sourceDirOverride)) {
-            yield Sse::progress("{$projectType} 构建成功", 59, [], $sessionUuid);
+            yield Sse::progress("{$projectType} 构建成功", $progressStep, [], $sessionUuid);
             return true;
         } else {
-            yield Sse::progress("{$projectType} 构建失败或目录为空", 59, [], $sessionUuid);
+            yield Sse::progress("{$projectType} 构建失败或目录为空", $progressStep, [], $sessionUuid);
             return false;
         }
     }
@@ -500,18 +696,44 @@ final class InstallService
         $resolver = $this->installConfigResolver();
         $mode     = $resolver->resolveMode($mode);
 
-        // 清单来自配置：--templates / params 显式覆盖优先，否则取模式下的模板 + 通用模板
-        $override = $this->normalizeTemplateOverride($templateOverride);
-        $projects = $resolver->resolveTemplates($mode, $override);
-
-        // 单租户不安装 platform（保持既有行为）；显式 --templates 时尊重用户选择
-        if (!$enableTenant && $override === null) {
-            $projects = array_values(array_filter(
-                $projects,
-                static fn ($t) => $t !== 'platform'
-            ));
+        // 显式 --templates 只能收窄清单；构建应用最终由租户模式 + build_output 规则决定
+        $override  = $this->normalizeTemplateOverride($templateOverride);
+        $requested = $resolver->resolveTemplates($mode, $override);
+        $projects  = $resolver->buildTemplates($enableTenant, $mode, $override);
+        $dropped   = array_values(array_diff($requested, $projects));
+        if ($dropped !== []) {
+            yield Sse::warning(
+                sprintf(
+                    '未启用多租户，以下应用不在构建输出规则内，已跳过：%s',
+                    implode('、', $dropped)
+                ),
+                [],
+                $sessionUuid
+            );
         }
 
+        $modeLabel = (string) ($resolver->modes()[$mode]['label'] ?? $mode);
+        yield Sse::progress(
+            sprintf('前端模板模式：%s；待处理应用：%s', $modeLabel, implode('、', $projects)),
+            34,
+            [
+                'phase'          => 'frontend-plan',
+                'mode'           => $mode,
+                'tenant_enabled' => $enableTenant,
+                'templates'      => $projects,
+                'template_paths' => array_combine(
+                    $projects,
+                    array_map(static fn (string $project): string => $resolver->templatePath($project, $mode), $projects)
+                ),
+                'output_dirs'    => array_combine(
+                    $projects,
+                    array_map(static fn (string $project): string => $resolver->templateOutputDir($project), $projects)
+                ),
+            ],
+            $sessionUuid
+        );
+
+        // 仅处理规则内且实际存在的模板
         $availableProjects = [];
         $projectPaths      = [];
         foreach ($projects as $project) {
@@ -532,26 +754,45 @@ final class InstallService
             return;
         }
 
-        // 安装依赖 (60-65%)
-        yield Sse::progress('安装前端依赖...', 62, [], $sessionUuid);
-        foreach ($availableProjects as $project) {
-            yield from $this->installFrontendDependencies($project, $sessionUuid, $projectPaths[$project] ?? null);
-        }
+        // 逐项目安装、构建、检查，避免单个项目失败拖垮其他项目
+        $builtProjects  = [];
+        $failedProjects = [];
+        $total          = count($availableProjects);
+        foreach ($availableProjects as $index => $project) {
+            // 62-77 区间按应用数量均分，进度条随每个应用推进
+            $installStep = 62 + (int) floor(($index * 15) / max($total, 1));
+            $buildStep   = $installStep + 2;
+            $checkStep   = $installStep + 4;
+            try {
+                yield Sse::progress("安装前端依赖：{$project}", $installStep, [], $sessionUuid);
+                yield from $this->installFrontendDependencies($project, $sessionUuid, $projectPaths[$project] ?? null);
 
-        // 构建前端 (65-70%)
-        yield Sse::progress('构建前端项目...', 67, [], $sessionUuid);
-        foreach ($availableProjects as $project) {
-            yield from $this->buildFrontend($project, $sessionUuid, $projectPaths[$project] ?? null);
-        }
+                yield Sse::progress("构建前端项目：{$project}", $buildStep, [], $sessionUuid);
+                yield from $this->buildFrontend($project, $sessionUuid, $projectPaths[$project] ?? null);
 
-        // 检查构建结果 (70-75%)
-        yield Sse::progress('检查构建结果...', 72, [], $sessionUuid);
-        $builtProjects = [];
-        foreach ($availableProjects as $project) {
-            $sourceDir = $this->frontendBuildSourceDir($project, $projectPaths[$project] ?? null, $resolver);
-            if (yield from $this->checkAndWaitForBuildResult($project, $sessionUuid, $sourceDir)) {
-                $builtProjects[] = $project;
+                $sourceDir = $this->frontendBuildSourceDir($project, $projectPaths[$project] ?? null, $resolver);
+                if (yield from $this->checkAndWaitForBuildResult($project, $sessionUuid, $sourceDir, $checkStep)) {
+                    $builtProjects[] = $project;
+                } else {
+                    $failedProjects[] = $project;
+                }
+            } catch (\Throwable $e) {
+                $failedProjects[] = $project;
+                yield Sse::progress(
+                    "前端项目 {$project} 处理失败，已跳过：{$e->getMessage()}",
+                    72,
+                    [],
+                    $sessionUuid
+                );
             }
+        }
+
+        if ($failedProjects !== []) {
+            yield Sse::warning(
+                '以下前端项目未构建成功，未迁移到 public：' . implode('、', $failedProjects),
+                [],
+                $sessionUuid
+            );
         }
 
         if (empty($builtProjects)) {
@@ -676,12 +917,29 @@ final class InstallService
     private function migrateFrontendBuildFiles(string $sessionUuid, array $availableProjects, array $projectPaths = []): \Generator
     {
         try {
-            $progressStep = 61;
+            $progressStep = 78;
             $resolver     = $this->installConfigResolver();
             foreach ($availableProjects as $project) {
-                yield Sse::progress("迁移{$project}前端构建文件...", $progressStep, [], $sessionUuid);
+                $targetDir = $resolver->templateOutputDir($project);
+                yield Sse::progress(
+                    "迁移{$project}前端构建文件到 " . $this->relativePath($targetDir) . '...',
+                    $progressStep,
+                    [],
+                    $sessionUuid
+                );
+
                 $sourceDir = $this->frontendBuildSourceDir($project, $projectPaths[$project] ?? null, $resolver);
-                $this->migrateFrontendProgram($project, $sourceDir);
+                if (!$this->prepareOutputTarget($project, $targetDir)) {
+                    yield Sse::warning("无法准备{$project}输出目录，已跳过迁移", [], $sessionUuid);
+                    $progressStep++;
+                    continue;
+                }
+
+                if (!$this->migrateFrontendProgram($project, $sourceDir, $targetDir)) {
+                    // 单个应用迁移失败时立即恢复其原有输出目录，避免留下半成品
+                    $this->rollbackOutputTarget($targetDir);
+                    yield Sse::warning("迁移{$project}前端构建文件失败", [], $sessionUuid);
+                }
                 $progressStep++;
             }
 
@@ -694,10 +952,11 @@ final class InstallService
     /**
      * 迁移前端构建文件
      *
-     * @param string $frontendType 前端类型（admin/web/uni-app）
-     * @return bool
+     * @param string      $frontendType     前端类型（admin/platform/web）
+     * @param string|null $sourceDirOverride 模式解析出的构建产物目录
+     * @param string|null $targetDirOverride 模式解析出的 public 输出目录
      */
-    private function migrateFrontendProgram(string $frontendType, ?string $sourceDirOverride = null): bool
+    private function migrateFrontendProgram(string $frontendType, ?string $sourceDirOverride = null, ?string $targetDirOverride = null): bool
     {
         $config = config('terminal.frontend_programs', []);
         
@@ -715,9 +974,9 @@ final class InstallService
         $preserveFiles = $programConfig['preserve_files'] ?? [];
         $copyOptions = $programConfig['copy_options'] ?? [];
 
-        // 替换路径变量；模式解析出的 source_dir 优先，避免回落到 mono 默认路径
+        // 替换路径变量；模式解析出的路径优先，避免回落到 mono 默认路径
         $sourceDir = $sourceDirOverride ?? $this->replacePathVariables($sourceDir);
-        $targetDir = $this->replacePathVariables($targetDir);
+        $targetDir = $targetDirOverride ?? $this->replacePathVariables($targetDir);
 
         if (empty($sourceDir) || empty($targetDir)) {
             return false;
@@ -729,6 +988,59 @@ final class InstallService
         } catch (\Exception $e) {
             return false;
         }
+    }
+
+    /**
+     * 准备 public 输出目录：已存在则先移动到回退区，新目录由迁移逻辑创建
+     */
+    private function prepareOutputTarget(string $project, string $targetDir): bool
+    {
+        if (!is_dir($targetDir)) {
+            $this->createdOutputDirs[] = $targetDir;
+            return true;
+        }
+
+        $backupDir = rtrim(base_path('runtime/install/rollback/' . date('YmdHis') . '_' . uniqid()), '/')
+            . '/' . $project;
+        $parent = dirname($backupDir);
+        if (!is_dir($parent) && !mkdir($parent, 0755, true) && !is_dir($parent)) {
+            return false;
+        }
+
+        if (@rename($targetDir, $backupDir)) {
+            $this->outputBackups[$targetDir] = $backupDir;
+            return true;
+        }
+
+        // Windows 下目录被占用时 rename 可能失败，退化为复制后删除
+        if ($this->copyDirectory($targetDir, $backupDir)) {
+            $this->deleteDirectory($targetDir);
+            if (!is_dir($targetDir)) {
+                $this->outputBackups[$targetDir] = $backupDir;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 恢复单个输出目录（迁移失败时立即回退）
+     */
+    private function rollbackOutputTarget(string $targetDir): void
+    {
+        $backupDir = $this->outputBackups[$targetDir] ?? null;
+
+        if (is_dir($targetDir)) {
+            $this->deleteDirectory($targetDir);
+        }
+
+        if (is_string($backupDir) && is_dir($backupDir)) {
+            @rename($backupDir, $targetDir);
+        }
+
+        unset($this->outputBackups[$targetDir]);
+        $this->createdOutputDirs = array_values(array_diff($this->createdOutputDirs, [$targetDir]));
     }
 
     /**

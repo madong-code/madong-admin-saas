@@ -15,6 +15,8 @@ declare(strict_types=1);
 namespace app\command;
 
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
@@ -29,6 +31,36 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 abstract class BaseCommand extends Command
 {
+    /** 可选进度条：设置后 SSE progress 事件将驱动进度条显示 */
+    protected ?ProgressBar $progressBar = null;
+
+    /**
+     * 启动进度条
+     */
+    protected function startProgressBar(OutputInterface $output, int $max = 100): void
+    {
+        $this->progressBar = new ProgressBar($output, $max);
+        $this->progressBar->setFormat(' %current%/%max% [%bar%] %percent:3s%% %message%');
+        $this->progressBar->setMessage('准备中...');
+        $this->progressBar->start();
+    }
+
+    /**
+     * 结束进度条
+     */
+    protected function stopProgressBar(bool $clear = false): void
+    {
+        if ($this->progressBar === null) {
+            return;
+        }
+
+        if ($clear) {
+            $this->progressBar->clear();
+        } else {
+            $this->progressBar->finish();
+        }
+        $this->progressBar = null;
+    }
     /**
      * 解析SSE事件
      *
@@ -73,12 +105,23 @@ abstract class BaseCommand extends Command
 
                                 switch ($eventType) {
                                     case 'progress':
-                                        $progress = $data['progress'] ?? 0;
-                                        $message = $data['message'] ?? '';
-                                        $io->text(sprintf("[%d%%] %s", $progress, $message));
+                                        $progress = (int) ($data['progress'] ?? 0);
+                                        $message  = (string) ($data['message'] ?? '');
+                                        if ($this->progressBar !== null) {
+                                            // 多行命令输出不放进进度条，避免破坏单行渲染
+                                            if ($message !== '' && (str_contains($message, "\n") || strlen($message) > 160)) {
+                                                $io->text($message);
+                                            } else {
+                                                $this->progressBar->setMessage($message);
+                                            }
+                                            $this->progressBar->setProgress(max(0, min(100, $progress)));
+                                        } else {
+                                            $io->text(sprintf("[%d%%] %s", $progress, $message));
+                                        }
                                         break;
 
                                     case 'completed':
+                                        $this->stopProgressBar();
                                         $message = $data['message'] ?? 'Operation completed successfully';
                                         if ($pluginName) {
                                             $io->success("Plugin '{$pluginName}' {$message}");
@@ -88,11 +131,19 @@ abstract class BaseCommand extends Command
                                         return Command::SUCCESS;
 
                                     case 'runtime_error':
+                                        $this->stopProgressBar(true);
                                         $io->error($data['message'] ?? '运行时错误');
+                                        if (!empty($data['data']['hint'])) {
+                                            $io->note((string) $data['data']['hint']);
+                                        }
                                         return Command::FAILURE;
 
                                     case 'error':
+                                        $this->stopProgressBar(true);
                                         $io->error($data['message'] ?? 'Operation failed');
+                                        if (!empty($data['data']['hint'])) {
+                                            $io->note((string) $data['data']['hint']);
+                                        }
                                         return Command::FAILURE;
 
                                     case 'warning':
