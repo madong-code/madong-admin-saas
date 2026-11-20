@@ -28,10 +28,10 @@ return [
     // ========== Token 有效期配置 (秒) ==========
     'ttl'             => [
         // 访问令牌有效期
-        'access'  => (int) env('JWT_ACCESS_TTL', 7200),
+        'access'  => env('JWT_ACCESS_TTL', 7200),
 
         // 刷新令牌有效期，默认 7 天
-        'refresh' => (int) env('JWT_REFRESH_TTL', 604800),
+        'refresh' => env('JWT_REFRESH_TTL', 604800),
     ],
 
     // ========== 登录模式 ==========
@@ -65,10 +65,10 @@ return [
         'refresh_enabled'      => true,
 
         // 刷新令牌宽限期（秒），允许在令牌即将过期时提前刷新
-        'refresh_grace_period' => (int) env('JWT_REFRESH_GRACE_PERIOD', 3600),
+        'refresh_grace_period' => env('JWT_REFRESH_GRACE_PERIOD', 3600),
 
         // 最大同时登录设备数（0 表示不限制）
-        'max_devices'          => (int) env('JWT_MAX_DEVICES', 0),
+        'max_devices'          => env('JWT_MAX_DEVICES', 0),
 
         // 是否强制刷新（每次请求都返回新的 access_token）
         'force_refresh'        => false,
@@ -80,10 +80,10 @@ return [
     // ========== Redis 连接配置 ==========
     'redis'           => [
         'host'     => env('REDIS_HOST', '127.0.0.1'),
-        'port'     => (int) env('REDIS_PORT', 6379),
+        'port'     => env('REDIS_PORT', 6379),
         'password' => env('REDIS_PASSWORD'),
-        'database' => (int) env('REDIS_DATABASE', 0),
-        'timeout'  => (int) env('REDIS_TIMEOUT', 0),
+        'database' => env('REDIS_DATABASE', 0),
+        'timeout'  => env('REDIS_TIMEOUT', 0),
     ],
 
     // ========== 预留字段 ==========
