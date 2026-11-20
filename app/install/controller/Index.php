@@ -13,6 +13,7 @@ declare(strict_types=1);
  */
 namespace app\install\controller;
 
+use core\business\install\InstallConfigResolver;
 use core\business\install\InstallService;
 use core\foundation\tool\Json;
 use madong\swagger\annotation\response\SimpleResponse;
@@ -60,12 +61,118 @@ class Index
                 if (file_exists($lockFile)) {
                     $installTime = trim(file_get_contents($lockFile));
                 }
-                return Json::fail('系统已安装', ['installed' => true, 'install_time' => $installTime, 'saas_mode' => $saasMode]);
+                return Json::fail('系统已安装', [
+                    'installed'    => true,
+                    'install_time' => $installTime,
+                    'saas_mode'    => $saasMode,
+                    // 产品版本：madong-admin-saas 同时支持单体/多租户部署，安装向导据此展示部署模式与模板模式
+                    'edition'      => 'saas',
+                ]);
             }
 
-            return Json::success('系统未安装', ['installed' => false, 'saas_mode' => $saasMode]);
+            return Json::success('系统未安装', [
+                'installed' => false,
+                'saas_mode' => $saasMode,
+                'edition'   => 'saas',
+            ]);
         } catch (Throwable $e) {
             return Json::fail('检查失败: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * 获取框架标识（安装器固定唯一框架，不提供框架选择）
+     */
+    #[OA\Get(
+        path: '/install/framework',
+        summary: '获取安装框架标识',
+        tags: ['安装'])
+    ]
+    #[SimpleResponse(schema: [], example: [])]
+    public function framework(Request $request): Response
+    {
+        try {
+            $name    = (string) config('framework.name', 'madong-admin-saas');
+            $version = (string) config('framework.version', '');
+
+            // 框架能力：madong-admin-saas 固定支持多租户与多模板寻址，
+            // 前端据此解锁「部署模式」与「前端模板模式」选择，不随安装期租户开关变化。
+            $meta = [
+                'name'                    => $name,
+                'version'                 => $version,
+                'supports_tenant'         => true,
+                'supports_multi_template' => true,
+            ];
+
+            return Json::success('框架标识获取成功', [
+                'verified'   => true,
+                'edition'    => 'saas',
+                'saas_mode'  => (bool) config('tenant.enable', false),
+                'framework'  => $meta,
+                // 兼容旧接口字段
+                'name'       => $name,
+                'version'    => $version,
+            ]);
+        } catch (Throwable $e) {
+            return Json::fail('框架标识获取失败: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * 获取安装模式选项（mono / separated）及模板寻址与构建输出计划
+     */
+    #[OA\Get(
+        path: '/install/mode',
+        summary: '获取安装模式选项',
+        tags: ['安装'])
+    ]
+    #[SimpleResponse(schema: [], example: [])]
+    public function mode(Request $request): Response
+    {
+        try {
+            $resolver = new InstallConfigResolver();
+            $tenant   = filter_var(config('tenant.enable', false), FILTER_VALIDATE_BOOLEAN);
+            $default  = $resolver->resolveMode(null);
+
+            $modes = [];
+            foreach ($resolver->installModeOptions() as $key => $option) {
+                $key           = (string) $key;
+                $allTemplates  = $resolver->resolveTemplates($key);
+                $templatePaths = [];
+                $outputDirs    = [];
+                foreach ($allTemplates as $template) {
+                    $templatePaths[$template] = $resolver->templatePath($template, $key);
+                    $outputDirs[$template]    = $resolver->templateOutputDir($template);
+                }
+
+                $modes[$key] = [
+                    'label'          => (string) ($option['label'] ?? $key),
+                    'description'    => (string) ($option['description'] ?? ''),
+                    'templates'      => $option['templates'] ?? [],
+                    'apps'           => $option['apps'] ?? [],
+                    // 模板寻址不受租户开关影响：mono 为 admin/platform + web，separated 为三端独立目录
+                    'template_paths' => $templatePaths,
+                    'output_dirs'    => $outputDirs,
+                    // 构建应用清单随租户开关变化
+                    'build_apps'      => $resolver->buildTemplates($tenant, $key),
+                    'build_apps_by_tenant' => [
+                        'single_tenant' => $resolver->buildTemplates(false, $key),
+                        'multi_tenant'  => $resolver->buildTemplates(true, $key),
+                    ],
+                ];
+            }
+
+            return Json::success('安装模式获取成功', [
+                'framework'      => (string) config('framework.name', 'madong-admin-saas'),
+                // 前端安装向导读取 default_mode；保留 default 兼容旧调用方
+                'default_mode'   => $default,
+                'default'        => $default,
+                'modes'          => $modes,
+                'build_output'   => config('install.build_output', []),
+                'tenant_enabled' => $tenant,
+            ]);
+        } catch (Throwable $e) {
+            return Json::fail('安装模式获取失败: ' . $e->getMessage());
         }
     }
 
