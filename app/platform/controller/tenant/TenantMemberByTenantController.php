@@ -19,6 +19,7 @@ use core\foundation\tool\Json;
 use OpenApi\Attributes as OA;
 use madong\swagger\annotation\response\PageResponse;
 use madong\swagger\annotation\response\SimpleResponse;
+use support\annotation\Middleware;
 use support\Request;
 use support\Container;
 
@@ -28,6 +29,7 @@ use support\Container;
  * 从租户列表"更多"进入时，传入 tenant_id，后端自动切换到对应库表操作。
  * 路径格式: /tenant/{id}/member/...
  */
+#[Middleware(\app\platform\middleware\AccessTokenMiddleware::class)]
 final class TenantMemberByTenantController extends Base
 {
     /**

@@ -19,8 +19,10 @@ use core\foundation\tool\Json;
 use madong\swagger\attribute\AllowAnonymous;
 use madong\swagger\annotation\response\SimpleResponse;
 use OpenApi\Attributes as OA;
+use support\annotation\Middleware;
 use support\Request;
 
+#[Middleware(\app\platform\middleware\AccessTokenMiddleware::class)]
 final class PlatformMenuController extends Base
 {
     public function __construct(PlatformMenuService $service)

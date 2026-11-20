@@ -21,8 +21,10 @@ use core\foundation\tool\Json;
 use madong\swagger\annotation\response\PageResponse;
 use madong\swagger\annotation\response\SimpleResponse;
 use OpenApi\Attributes as OA;
+use support\annotation\Middleware;
 use support\Request;
 
+#[Middleware(\app\platform\middleware\AccessTokenMiddleware::class)]
 final class AccountController extends Base
 {
     public function __construct(TenantService $service)
