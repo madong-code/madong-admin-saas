@@ -95,9 +95,9 @@ final class SecurityConfigTest extends TestCase
         self::assertStringContainsString("\$params['build_project'] = \$buildProject === '1' ? '1' : '0';", $cli);
         self::assertStringContainsString(': \'1\';', $cli);
 
-        $webStore = dirname(__DIR__, 3) . '/template/mono/apps/install/src/store/module/install.ts';
+        $webStore = dirname(__DIR__, 3) . '/template/install/src/store/module/install.ts';
         if (!is_file($webStore)) {
-            self::markTestSkipped('template/mono 尚未下载，跳过安装向导 store 断言');
+            self::markTestSkipped('template/install 尚未下载，跳过安装向导 store 断言');
         }
         self::assertStringContainsString('build_project: false', (string) file_get_contents($webStore));
     }
