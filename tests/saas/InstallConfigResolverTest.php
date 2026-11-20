@@ -31,9 +31,12 @@ final class InstallConfigResolverTest extends TestCase
         parent::tearDown();
     }
 
-    public function testDefaultModeIsSeparated(): void
+    public function testDefaultModeFollowsConfig(): void
     {
-        self::assertSame('separated', $this->resolver->resolveMode());
+        // 默认模式跟随 config/install.php 的 install_mode.default（不再硬编码具体值）
+        $config = require base_path('config/install.php');
+        $expected = $config['install_mode']['default'] ?? $config['default_mode'] ?? 'separated';
+        self::assertSame($expected, $this->resolver->resolveMode());
     }
 
     public function testExplicitModeIsHonored(): void
@@ -44,7 +47,10 @@ final class InstallConfigResolverTest extends TestCase
 
     public function testInvalidModeFallsBackToDefault(): void
     {
-        self::assertSame('separated', $this->resolver->resolveMode('unknown'));
+        // 非法模式回退到配置默认值
+        $config = require base_path('config/install.php');
+        $expected = $config['install_mode']['default'] ?? $config['default_mode'] ?? 'separated';
+        self::assertSame($expected, $this->resolver->resolveMode('unknown'));
     }
 
     public function testSeparatedTemplatePaths(): void
@@ -53,6 +59,19 @@ final class InstallConfigResolverTest extends TestCase
 
         self::assertSame($root . '/admin', $this->resolver->templatePath('admin', 'separated'));
         self::assertSame($root . '/platform', $this->resolver->templatePath('platform', 'separated'));
+    }
+
+    public function testAdminSourceAliasesAllResolveToAdminDir(): void
+    {
+        $root = rtrim(dirname(base_path()), '/') . '/template';
+
+        self::assertSame($root . '/admin', $this->resolver->templatePath('single', 'separated'));
+        self::assertSame($root . '/admin', $this->resolver->templatePath('aura', 'separated'));
+        self::assertSame(['admin', 'web'], $this->resolver->resolveTemplates('separated', ['aura', 'web']));
+        self::assertSame('single', $this->resolver->resolveAdminVariant());
+        self::assertSame('aura', $this->resolver->resolveAdminVariant('aura'));
+        self::assertSame('single', $this->resolver->adminVariants()['single']['repo'] ?? null);
+        self::assertSame('aura', $this->resolver->adminVariants()['aura']['repo'] ?? null);
     }
 
     public function testMonoTemplatePaths(): void
@@ -76,10 +95,75 @@ final class InstallConfigResolverTest extends TestCase
         self::assertSame('', $this->resolver->templatePath('not-exists', 'mono'));
     }
 
-    public function testResolveTemplatesIncludesCommonWeb(): void
+    public function testResolveTemplatesIncludesCommonTemplates(): void
     {
         self::assertSame(['admin', 'platform', 'web'], $this->resolver->resolveTemplates('separated'));
         self::assertSame(['admin', 'platform', 'web'], $this->resolver->resolveTemplates('mono'));
+    }
+
+    public function testInstallModeOptionsExposeMonoAndSeparated(): void
+    {
+        $options = $this->resolver->installModeOptions();
+
+        self::assertArrayHasKey('mono', $options);
+        self::assertArrayHasKey('separated', $options);
+        self::assertNotSame('', trim((string) ($options['mono']['label'] ?? '')));
+        self::assertNotSame('', trim((string) ($options['mono']['description'] ?? '')));
+        self::assertSame(['template/mono', 'template/web'], $options['mono']['templates'] ?? null);
+        self::assertSame(['template/admin', 'template/platform', 'template/web'], $options['separated']['templates'] ?? null);
+        self::assertSame(['admin', 'platform'], $options['mono']['apps'] ?? null);
+    }
+
+    public function testBuildTemplatesFollowTenantRules(): void
+    {
+        // 单租户仅构建 admin、web；多租户构建所有已定义多端应用
+        self::assertSame(['admin', 'web'], $this->resolver->buildTemplates(false, 'mono'));
+        self::assertSame(['admin', 'web'], $this->resolver->buildTemplates(false, 'separated'));
+        self::assertSame(['admin', 'platform', 'web'], $this->resolver->buildTemplates(true, 'mono'));
+        self::assertSame(['admin', 'platform', 'web'], $this->resolver->buildTemplates(true, 'separated'));
+    }
+
+    public function testBuildTemplatesOverrideCannotBreakTenantRule(): void
+    {
+        // 显式清单只能收窄，单租户下 platform 必须被剔除
+        self::assertSame(
+            ['admin', 'web'],
+            $this->resolver->buildTemplates(false, 'separated', ['admin', 'platform', 'web'])
+        );
+        // 多租户下显式清单正常生效
+        self::assertSame(
+            ['web', 'platform'],
+            $this->resolver->buildTemplates(true, 'separated', ['web', 'platform'])
+        );
+    }
+
+    public function testInstallModePlanResolvesPathsAndOutputDirs(): void
+    {
+        $root   = rtrim(dirname(base_path()), '/') . '/template';
+        $public = rtrim(base_path('public'), '/');
+
+        $mono = $this->resolver->installModePlan('mono', true);
+        self::assertSame('mono', $mono['mode']);
+        self::assertSame(['admin', 'platform', 'web'], $mono['templates']);
+        self::assertSame($root . '/mono/apps/admin', $mono['template_paths']['admin'] ?? null);
+        self::assertSame($root . '/mono/apps/platform', $mono['template_paths']['platform'] ?? null);
+        self::assertSame($root . '/web', $mono['template_paths']['web'] ?? null);
+        self::assertSame($public . '/admin', $mono['output_dirs']['admin'] ?? null);
+
+        $separated = $this->resolver->installModePlan('separated', false);
+        self::assertSame(['admin', 'web'], $separated['templates']);
+        self::assertSame($root . '/admin', $separated['template_paths']['admin'] ?? null);
+        self::assertSame($root . '/web', $separated['template_paths']['web'] ?? null);
+        self::assertSame($public . '/web', $separated['output_dirs']['web'] ?? null);
+    }
+
+    public function testTemplateOutputDirUsesMeta(): void
+    {
+        $public = rtrim(base_path('public'), '/');
+
+        self::assertSame($public . '/admin', $this->resolver->templateOutputDir('single'));
+        self::assertSame($public . '/platform', $this->resolver->templateOutputDir('platform'));
+        self::assertSame($public . '/web', $this->resolver->templateOutputDir('web'));
     }
 
     public function testTemplateOverrideWinsAndDeduplicates(): void
