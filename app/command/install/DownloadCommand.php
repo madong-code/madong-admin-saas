@@ -52,8 +52,11 @@ class DownloadCommand extends BaseCommand
 {
     private ?InstallConfigResolver $configResolver = null;
 
-    /** 国内镜像直连时用于忽略本机失效代理的 git -c 参数 */
+    /** 当前镜像策略下的 git -c 选项（国内镜像 = 绕过代理，海外镜像 = 自动注入检测到的代理） */
     private string $gitConfigOptions = '';
+
+    /** 自动检测到的本机代理 URL（如 http://127.0.0.1:7890），未检测到时为 null */
+    private ?string $detectedProxyHost = null;
 
     protected function configure(): void
     {
@@ -118,7 +121,24 @@ class DownloadCommand extends BaseCommand
             $mirrorName = 'github';
         }
         $mirrorConfig = is_array($mirrors[$mirrorName] ?? null) ? $mirrors[$mirrorName] : [];
-        $this->gitConfigOptions = !empty($mirrorConfig['no_proxy']) ? '-c http.proxy= -c https.proxy= ' : '';
+
+        // 自动检测系统代理（Clash / V2Ray / git 全局配置 / 环境变量）
+        $this->detectedProxyHost = $this->detectSystemProxy();
+
+        if (!empty($mirrorConfig['no_proxy'])) {
+            // 国内镜像：强制绕过系统代理直连（gitee/gitcode 走直连通常比走代理更快更稳定）
+            $this->gitConfigOptions = '-c http.proxy= -c https.proxy= ';
+        } elseif ($this->detectedProxyHost !== null) {
+            // 海外镜像（github）：自动注入检测到的代理
+            $this->gitConfigOptions = sprintf(
+                '-c http.proxy=%s -c https.proxy=%s ',
+                $this->detectedProxyHost,
+                $this->detectedProxyHost
+            );
+        } else {
+            // 未检测到代理：让 git 使用自身全局配置（若用户手动设置过 http.proxy 会自动生效）
+            $this->gitConfigOptions = '';
+        }
 
         // 按镜像优先级合并仓库表：主镜像优先；fallback_enabled 关闭（默认）时不回退到其他仓库
         $mirrorChain = [$mirrorName];
@@ -781,5 +801,56 @@ JS);
         $returnVar = 0;
         exec('git --version', $output, $returnVar);
         return $returnVar === 0;
+    }
+
+    /**
+     * 自动检测本机可用的 HTTP/HTTPS 代理
+     *
+     * 检测顺序：git 全局配置 → 环境变量 → 本地监听端口（Clash/V2Ray/mihomo 等）
+     * 返回标准格式 "http://host:port"，未检测到返回 null
+     */
+    private function detectSystemProxy(): ?string
+    {
+        // 1) git 全局 http.proxy / https.proxy
+        $output = [];
+        $returnVar = 0;
+        exec('git config --global --get http.proxy 2>NUL', $output, $returnVar);
+        $value = trim(implode('', $output));
+        if ($returnVar === 0 && $value !== '') {
+            return $value;
+        }
+
+        // 2) 环境变量 HTTP_PROXY / HTTPS_PROXY / ALL_PROXY
+        foreach (['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy', 'ALL_PROXY', 'all_proxy'] as $envKey) {
+            $envVal = getenv($envKey);
+            if ($envVal !== false && $envVal !== '') {
+                return $envVal;
+            }
+        }
+
+        // 3) 扫描本地常见代理端口（Clash 默认 7890、V2Ray 默认 1080/10808/10809、mihomo 20170、通用 3128/8080）
+        $commonPorts = [7890, 7891, 10808, 10809, 1080, 20170, 3128, 8080, 1087];
+        $isWindows = PHP_OS_FAMILY === 'Windows';
+        foreach ($commonPorts as $port) {
+            $listening = false;
+            if ($isWindows) {
+                // PowerShell: netstat -ano | findstr 127.0.0.1:PORT | findstr LISTENING
+                $cmd = sprintf('netstat -ano 2>NUL | findstr "127.0.0.1:%d" | findstr LISTENING', $port);
+                $out = [];
+                exec($cmd, $out, $ret);
+                $listening = $ret === 0;
+            } else {
+                $fp = @fsockopen('127.0.0.1', $port, $errno, $errstr, 1);
+                if ($fp) {
+                    fclose($fp);
+                    $listening = true;
+                }
+            }
+            if ($listening) {
+                return "http://127.0.0.1:{$port}";
+            }
+        }
+
+        return null;
     }
 }
