@@ -21,6 +21,7 @@ use core\foundation\exception\handler\AdminException;
 use core\io\upload\support\StoragePathResolver;
 use core\io\upload\UploadFile;
 use core\io\upload\UploadScene;
+use core\io\network\RemoteImageFetcher;
 use madong\helper\Arr;
 use support\Container;
 use support\Log;
@@ -35,46 +36,52 @@ class UploadService extends BaseService
     }
 
     /**
-     * 远程下载图片到本地
+     * 远程下载图片到本地（带 SSRF 防护）
+     *
+     * 防护要点：协议白名单 / DNS+IP 黑名单 / 重定向再校验 / MIME+Magic 双重校验
      *
      * @param string $url
      * @param string $subDir 子目录（如 image/202609），为空时落在存储根目录
      *
-     * @return mixed
+     * @return array
      * @throws \Exception
      */
     public function saveNetworkImage(string $url, string $subDir = ''): array
     {
         $config = UploadFile::config('local');
-        $data   = file_get_contents($url);
-        if ($data === false) {
-            throw new AdminException('获取文件资源失败');
+
+        // SSRF 防护的远程图片拉取
+        try {
+            $fetched = (new RemoteImageFetcher())->fetchImage($url);
+        } catch (\RuntimeException $e) {
+            throw new AdminException($e->getMessage());
         }
-        $image_resource = imagecreatefromstring($data);
+
+        $image_resource = imagecreatefromstring($fetched['body']);
         if (!$image_resource) {
             throw new AdminException('创建图片资源失败');
         }
-        $filename       = basename($url);
-        $file_extension = pathinfo($filename, PATHINFO_EXTENSION);
+        $filename       = basename(parse_url($fetched['final_url'], PHP_URL_PATH) ?: 'image');
+        $file_extension = $fetched['ext'];
         $full_dir       = runtime_path() . '/resource/';
         if (!is_dir($full_dir)) {
             mkdir($full_dir, 0777, true);
         }
         $save_path    = $full_dir . $filename;
-        $content_type = 'image/';
+        $content_type = $fetched['content_type'];
         switch ($file_extension) {
             case 'jpg':
             case 'jpeg':
-                $content_type = 'image/jpeg';
-                $result       = imagejpeg($image_resource, $save_path);
+                $result = imagejpeg($image_resource, $save_path);
                 break;
             case 'png':
-                $content_type = 'image/png';
-                $result       = imagepng($image_resource, $save_path);
+                $result = imagepng($image_resource, $save_path);
                 break;
             case 'gif':
-                $content_type = 'image/gif';
-                $result       = imagegif($image_resource, $save_path);
+                $result = imagegif($image_resource, $save_path);
+                break;
+            case 'webp':
+                $result = imagewebp($image_resource, $save_path);
                 break;
             default:
                 imagedestroy($image_resource);
