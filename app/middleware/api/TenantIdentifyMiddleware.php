@@ -38,8 +38,32 @@ use Webman\Http\Request;
  */
 class TenantIdentifyMiddleware implements MiddlewareInterface
 {
+    /**
+     * 跳过此中间件的路径前缀（不需要租户上下文的公开端点）
+     *
+     * webman 的 $request->path() 返回不带 pathPrefix('/api') 的路径，
+     * 所以 skip 用 controller 级路径（如 /system/current-tenant）。
+     *
+     * /system/current-tenant —— 此端点自己手动调 Tenant::findByDomain()，
+     *   如果 TenantIdentifyMiddleware 也来跑一遍会形成死循环。
+     */
+    private const SKIP_PREFIXES = [
+        '/system/current-tenant',
+    ];
+
     public function process(Request $request, callable $next): Response
     {
+        // 死循环保护：current-tenant 端点自己就是用来识别租户的，不能再跑本中间件
+        // webman 的 $request->path() 不带 pathPrefix('/api')，
+        // 但有些中间件场景下 path 可能已拼上前缀，两种都检查
+        $path = '/' . ltrim($request->path(), '/');
+        $fullPath = '/' . ltrim($request->pathPrefix() . $request->path(), '/');
+        foreach (self::SKIP_PREFIXES as $prefix) {
+            if (str_starts_with($path, $prefix) || str_starts_with($fullPath, $prefix)) {
+                return $next($request);
+            }
+        }
+
         // 单体模式下跳过
         if (TenantContext::isSingleMode()) {
             return $next($request);
@@ -48,11 +72,23 @@ class TenantIdentifyMiddleware implements MiddlewareInterface
         // 多租户模式下，必须识别出当前请求所属的租户
         $tenantId = $this->resolveTenantId($request);
 
-        // 开发环境下自动回退到第一个激活的租户
-        if (empty($tenantId) && config('app.debug', false)) {
-            $firstTenant = Tenant::where('status', Tenant::STATUS_ACTIVE)->orderBy('id')->first();
-            if ($firstTenant) {
-                $tenantId = $firstTenant->id;
+        // 开发/localhost 环境下自动回退到第一个激活的租户
+        // 条件：debug 模式 或 配置了 auto_select_first 或 请求 host 是 localhost/127.0.0.1
+        if (empty($tenantId)) {
+            $host = preg_replace('/:\d+$/', '', $request->host());
+            $isLocalhost = in_array($host, ['127.0.0.1', 'localhost'], true);
+            $autoSelect = $isLocalhost
+                || config('app.debug', false)
+                || config('tenant.auto_select_first', false);
+            if ($autoSelect) {
+                try {
+                    $firstTenant = Tenant::where('status', Tenant::STATUS_ACTIVE)->orderBy('id')->first();
+                    if ($firstTenant) {
+                        $tenantId = $firstTenant->id;
+                    }
+                } catch (\Throwable $e) {
+                    // 数据库/表未就绪时静默跳过
+                }
             }
         }
 
@@ -122,6 +158,7 @@ class TenantIdentifyMiddleware implements MiddlewareInterface
         // 通过域名查找激活状态的租户
         $tenant = Tenant::findByDomain($host);
 
-        return $tenant ? $tenant->id : null;
+        // Tenant::id 是 bigint unsigned，PHP 返回 int；方法签名要求 ?string
+        return $tenant ? (string) $tenant->id : null;
     }
 }

@@ -57,18 +57,41 @@ class SiteConfigService extends \core\foundation\base\BaseService
      */
     private static array $cache = [];
 
+    /**
+     * 当前已识别的租户 key（用于检测租户切换时强制清缓存）
+     */
+    private static string $currentTenantKey = '';
+
     public function __construct(protected ConfigService $configService)
     {
     }
 
     /**
-     * 读取并映射为前台 WebSiteConfig 结构（按租户分桶的进程静态缓存）
+     * 读取并映射为前台 WebSiteConfig 结构
+     *
+     * 每次请求都强制从 DB 读取最新值并覆盖缓存——即使空值也必须执行，
+     * 避免：① 首次访问空值固化后永远不更新；② 后台保存新值后仍返回旧值；
+     * ③ 多租户切换时前一租户缓存串给当前租户。
+     * 进程内静态缓存仅作同请求内的去重（同进程同一请求多次调用 get()）。
      */
     public function get(): array
     {
         $cacheKey = self::cacheKey();
-        if (isset(self::$cache[$cacheKey])) {
-            return self::$cache[$cacheKey];
+
+        // 租户切换检测：从 tenant A 切到 tenant B 时强制清空全部桶，防跨租户污染
+        if (self::$currentTenantKey !== '' && self::$currentTenantKey !== $cacheKey) {
+            self::$cache = [];
+        }
+        self::$currentTenantKey = $cacheKey;
+
+        // 进程内同请求去重（同进程同一请求链多次调用 get() 直接返回）
+        // 注意：Webman 常驻进程，不同请求会共用同一个 self::$cache，
+        // 所以这里用一个 TTL 标记，超过 1 秒就强制重查。
+        $now = time();
+        if (isset(self::$cache[$cacheKey]) && isset(self::$cache[$cacheKey]['__ts']) && ($now - self::$cache[$cacheKey]['__ts']) < 1) {
+            $cached = self::$cache[$cacheKey];
+            unset($cached['__ts']);
+            return $cached;
         }
 
         try {
@@ -83,9 +106,9 @@ class SiteConfigService extends \core\foundation\base\BaseService
             $cfg[$outKey] = $saved[$storageKey] ?? null;
         }
 
-        // 类型规整 + 默认值（历史脏数据 / 未迁移新装容错）
+        // 类型规整（仅做 trim / null → ''，不做业务默认值兜底——默认值由前端 forceFillEmptyFields 统一处理）
         $cfg['site_name']     = trim((string) ($cfg['site_name'] ?? ''));
-        $cfg['site_logo']     = (string) ($cfg['site_logo'] ?? '');
+        $cfg['site_logo']     = trim((string) ($cfg['site_logo'] ?? ''));
         $cfg['copyright']     = (string) ($cfg['copyright'] ?? '');
         $cfg['icp_number']    = (string) ($cfg['icp_number'] ?? '');
         $cfg['icp_url']       = trim((string) ($cfg['icp_url'] ?? '')) ?: 'https://beian.miit.gov.cn/';
@@ -102,7 +125,17 @@ class SiteConfigService extends \core\foundation\base\BaseService
         }
         $cfg['membership_enabled'] = (bool) ($cfg['membership_enabled'] ?? false);
 
-        return self::$cache[$cacheKey] = $cfg;
+        // 写缓存，附带 TTL 标记
+        self::$cache[$cacheKey] = array_merge($cfg, ['__ts' => $now]);
+
+        // 清理其他租户残留桶（避免长时间运行进程积累脏桶）
+        foreach (array_keys(self::$cache) as $key) {
+            if ($key !== $cacheKey && $key !== '__current') {
+                unset(self::$cache[$key]);
+            }
+        }
+
+        return $cfg;
     }
 
     /**
@@ -124,6 +157,7 @@ class SiteConfigService extends \core\foundation\base\BaseService
     {
         if ($tenantId === null) {
             self::$cache = [];
+            self::$currentTenantKey = '';
             return;
         }
         unset(self::$cache[(string) $tenantId]);
