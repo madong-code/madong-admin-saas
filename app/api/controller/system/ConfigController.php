@@ -203,4 +203,58 @@ final class ConfigController extends Base
             return Json::fail($e->getMessage());
         }
     }
+
+    /**
+     * 按分组获取配置
+     *
+     * @param Request $request
+     * @param string  $groupCode 配置分组编码
+     *
+     * @return \support\Response
+     * @throws \ReflectionException
+     */
+    #[OA\Get(
+        path: "/system/config/group/{groupCode}",
+        summary: "按分组获取配置",
+        tags: ["系统配置"],
+    )]
+    #[OA\Parameter(
+        name: "groupCode",
+        description: "配置分组编码",
+        in: "path",
+        required: true,
+        schema: new OA\Schema(type: "string"),
+    )]
+    #[OA\Parameter(
+        name: "enabled_only",
+        description: "是否只获取启用的配置项",
+        in: "query",
+        required: false,
+        schema: new OA\Schema(type: "boolean", default: true),
+    )]
+    #[OA\Parameter(
+        name: "with_metadata",
+        description: "是否包含配置项的完整元数据",
+        in: "query",
+        required: false,
+        schema: new OA\Schema(type: "boolean", default: false),
+    )]
+    #[SimpleResponse(schema: [], example: '{"site_name": "官网", "site_logo": "/logo.png"}')]
+    #[AllowAnonymous(requireToken: false, requirePermission: false, description: '公共接口')]
+    public function getByGroup(Request $request, string $groupCode): \support\Response
+    {
+        try {
+            if (empty($groupCode)) {
+                return Json::fail('配置分组编码不能为空');
+            }
+            $options = [
+                'enabled_only'  => $request->input('enabled_only', true),
+                'with_metadata' => $request->input('with_metadata', false),
+            ];
+            $result = $this->service->getByGroup($groupCode, [], $options);
+            return Json::success('操作成功', $result);
+        } catch (\Exception $e) {
+            return Json::fail($e->getMessage());
+        }
+    }
 }
