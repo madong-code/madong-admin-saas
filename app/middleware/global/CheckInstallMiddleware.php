@@ -28,15 +28,17 @@ use Webman\MiddlewareInterface;
 class CheckInstallMiddleware implements MiddlewareInterface
 {
     /**
-     * 安装相关路径前缀（放行不拦截）
+     * 无需安装即可访问的路径前缀（放行不拦截）
+     * install — 安装向导本身
+     * web     — 公共站点静态入口（未安装时也应能打开首页）
      */
-    private const INSTALL_PREFIX = 'install';
+    private const PUBLIC_PREFIXES = ['install', 'web'];
 
     public function process(Request $request, callable $handler): Response
     {
-        // 安装相关请求直接放行（如 /install、/adminapi/install、/platformapi/install）
+        // 公共路径直接放行（如 /install、/web、/web/_nuxt/xxx.js）
         $segments = explode('/', trim($request->path(), '/'));
-        if (in_array(self::INSTALL_PREFIX, $segments, true)) {
+        if (array_intersect($segments, self::PUBLIC_PREFIXES)) {
             return $handler($request);
         }
 
